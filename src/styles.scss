@@ -1,0 +1,24 @@
+// Global styles (≈ Next.js app/globals.css). Not scoped.
+:root {
+  --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #e4e4de; --accent: #c3002f; --code-bg: #efefe9;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #141413; --fg: #ecece6; --muted: #9a9a93; --line: #2c2c2a; --accent: #ff5a73; --code-bg: #22221f; }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+h1, h2, h3 { line-height: 1.2; }
+
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }

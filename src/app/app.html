@@ -1,0 +1,13 @@
+<header class="site-header">
+  <a class="brand" routerLink="/">learn-angular</a>
+  <nav class="site-nav">
+    <!-- routerLink ≈ next/link; routerLinkActive adds the class when the URL matches -->
+    <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Roadmap</a>
+    <a routerLink="/lessons/setup" routerLinkActive="is-active">00 Setup</a>
+  </nav>
+</header>
+
+<main class="site-main">
+  <!-- ≈ Next.js {children} in layout.tsx: the matched route's component renders here -->
+  <router-outlet />
+</main>

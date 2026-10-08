@@ -1,0 +1,24 @@
+<!-- Literal @ and { } start Angular syntax: escape them (&#64;, &#123;), or use ngNonBindable for literal {{ }}. -->
+<section class="nsc-home">
+  <h1>Angular, one concept at a time</h1>
+  <p class="lead">Each lesson adds one idea to this site and maps it to something you already know from React / Next.js, jQuery or MVC. The end goal: Angular driving GSAP and Three.js.</p>
+
+  <ol class="roadmap">
+    <li class="is-done"><a routerLink="/lessons/setup">00 Setup &amp; how the app boots</a><span>≈ create-next-app, layout.tsx, main.tsx</span></li>
+    <li>01 Components &amp; templates: <code ngNonBindable>{{ }}</code>, <code>[prop]</code>, <code>(event)</code><span>≈ JSX, jQuery .text() / .on()</span></li>
+    <li>02 Control flow: <code>&#64;if</code>, <code>&#64;for</code>, <code>&#64;switch</code><span>≈ &amp;&amp;, .map() with key, Razor &#64;if</span></li>
+    <li>03 Signals: <code>signal</code>, <code>computed</code>, <code>effect</code><span>≈ useState, useMemo, useEffect</span></li>
+    <li>04 Inputs, outputs &amp; <code>ng-content</code><span>≈ props, callbacks, children</span></li>
+    <li>05 Services &amp; dependency injection<span>≈ context / custom hooks, MVC services</span></li>
+    <li>06 Routing deeper: params, lazy loading, guards<span>≈ app router, dynamic(), middleware</span></li>
+    <li>07 HTTP &amp; data loading<span>≈ fetch / TanStack Query, $.ajax</span></li>
+    <li>08 Forms<span>≈ controlled inputs, MVC model binding</span></li>
+    <li>09 Lifecycle &amp; the DOM: <code>viewChild</code>, <code>afterNextRender</code>, <code>DestroyRef</code><span>≈ useRef, useEffect cleanup, $(document).ready</span></li>
+    <li>10 Change detection, zone.js, OnPush, zoneless<span>≈ React.memo; the big difference from React</span></li>
+    <li>11 <code>&#64;defer</code> &amp; performance<span>≈ lazy + Suspense, next/image</span></li>
+    <li>12 Angular-native animation (CSS, enter/leave)<span>≈ Framer Motion AnimatePresence</span></li>
+    <li>13 GSAP inside Angular<span>≈ useGSAP</span></li>
+    <li>14 Three.js inside Angular<span>≈ react-three-fiber, by hand</span></li>
+    <li>15 GSAP + Three.js together, scroll-driven<span>the WEF-style hero</span></li>
+  </ol>
+</section>

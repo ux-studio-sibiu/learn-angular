@@ -1,0 +1,37 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 00</p>
+  <h1>Setup &amp; how the app boots</h1>
+  <!-- {{ }} interpolation ≈ {value} in JSX. Lesson 01 covers it properly. -->
+  <p>This site runs on Angular {{ angularVersion }}, scaffolded with <code>ng new</code> (≈ <code>create-next-app</code>).</p>
+
+  <h2>Boot sequence</h2>
+  <ol>
+    <li><code>src/index.html</code> contains an empty <code>&lt;app-root&gt;</code> tag.</li>
+    <li><code>src/main.ts</code> calls <code>bootstrapApplication(App, appConfig)</code> (≈ <code>createRoot(el).render(&lt;App/&gt;)</code>).</li>
+    <li>Angular finds the <code>app-root</code> selector and renders the <code>App</code> component into it.</li>
+    <li><code>App</code>'s template has <code>&lt;router-outlet /&gt;</code>; the router puts the page for the current URL there.</li>
+  </ol>
+
+  <h2>Where things live</h2>
+  <table>
+    <thead><tr><th>Angular</th><th>React / Next.js</th><th>jQuery / MVC</th></tr></thead>
+    <tbody>
+      <tr><td><code>angular.json</code></td><td><code>next.config.js</code> + build scripts</td><td>bundle config / .csproj</td></tr>
+      <tr><td><code>main.ts</code></td><td><code>main.tsx</code> (Vite)</td><td><code>$(document).ready</code> / <code>Program.cs</code></td></tr>
+      <tr><td><code>app.config.ts</code> providers</td><td>providers wrapped around the app in <code>layout.tsx</code></td><td>DI registration in <code>Startup</code></td></tr>
+      <tr><td><code>app.routes.ts</code></td><td>the <code>app/</code> folder structure</td><td>route table → controller</td></tr>
+      <tr><td><code>app.ts</code> + <code>app.html</code></td><td><code>app/layout.tsx</code></td><td><code>_Layout.cshtml</code></td></tr>
+      <tr><td><code>&lt;router-outlet /&gt;</code></td><td><code>&#123;children&#125;</code></td><td><code>&#64;RenderBody()</code></td></tr>
+      <tr><td><code>pages/*/</code> components</td><td><code>page.tsx</code></td><td>views</td></tr>
+      <tr><td><code>styles.scss</code></td><td><code>globals.css</code></td><td>site.css</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Worth noticing already</h2>
+  <ul>
+    <li><strong>Standalone components:</strong> each component lists what its template uses in <code>imports</code>. No NgModules (the 2017 way).</li>
+    <li><strong>Host elements:</strong> inspect the page — you'll see <code>&lt;app-root&gt;</code> and <code>&lt;app-lesson-setup&gt;</code> in the DOM. React leaves no wrapper tags.</li>
+    <li><strong>Scoped styles:</strong> the <code>_ngcontent-…</code> attributes are how component CSS is scoped.</li>
+    <li><strong>zone.js</strong> is on (<code>provideZoneChangeDetection</code> in <code>app.config.ts</code>). It decides when the screen updates — lesson 10, and it matters a lot for animation.</li>
+  </ul>
+</article>

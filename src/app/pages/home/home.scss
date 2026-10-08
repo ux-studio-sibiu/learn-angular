@@ -1,0 +1,17 @@
+.nsc-home {
+  .lead { color: var(--muted); font-size: 1.1rem; }
+}
+
+.roadmap {
+  padding-left: 0; list-style: none; counter-reset: none;
+
+  li {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px;
+    padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--muted);
+
+    span { font-size: 0.85rem; }
+  }
+
+  li.is-done { color: var(--fg); }
+  a { color: var(--accent); font-weight: 600; }
+}
