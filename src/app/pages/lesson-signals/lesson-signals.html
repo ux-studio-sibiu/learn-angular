@@ -1,0 +1,80 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 03</p>
+  <h1>Signals: signal, computed, effect</h1>
+  <p>A signal is a value that tells Angular when it changes. Templates, <code>computed</code>s and <code>effect</code>s that read it are tracked automatically, so Angular knows <em>exactly</em> what depends on what. That's the modern replacement for the plain fields of lessons 01–02.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React</th><th>Knockout (MVC era) / jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>count = signal(0)</code></td><td><code>const [count, setCount] = useState(0)</code></td><td><code>ko.observable(0)</code></td></tr>
+      <tr><td><code>count()</code> to read</td><td><code>count</code></td><td><code>count()</code> / <code>$el.text()</code></td></tr>
+      <tr><td><code>count.set(5)</code>, <code>count.update(c =&gt; c + 1)</code></td><td><code>setCount(5)</code>, <code>setCount(c =&gt; c + 1)</code></td><td><code>count(5)</code></td></tr>
+      <tr><td><code>computed(() =&gt; count() * 2)</code></td><td><code>useMemo(() =&gt; count * 2, [count])</code></td><td><code>ko.computed</code></td></tr>
+      <tr><td><code>effect(() =&gt; …)</code></td><td><code>useEffect(() =&gt; …, [deps])</code></td><td><code>.subscribe()</code> / update the DOM by hand</td></tr>
+    </tbody>
+  </table>
+  <p class="note">If you ever used Knockout in an MVC app, signals are basically that idea back, with a compiler around it. jQuery has no equivalent: you update every affected DOM spot yourself.</p>
+
+  <!-- 1. signal + computed -->
+  <h2>1. signal &amp; computed</h2>
+  <div class="demo">
+    <div class="demo-row">
+      <!-- No arrow functions in v20 templates, so update(c => c + 1) lives in class code; here set() does the same -->
+      <button type="button" (click)="count.set(count() - 1)">−</button>
+      <strong>{{ count() }}</strong>
+      <button type="button" (click)="count.set(count() + 1)">+</button>
+      <button type="button" (click)="count.set(0)">Reset</button>
+      <span class="note">double (computed) = {{ double() }}</span>
+    </div>
+  </div>
+  <p class="note">Read a signal by <strong>calling</strong> it: <code>count()</code>. The call is how Angular records "this template / computed depends on count". Forgetting the <code>()</code> prints the function, not the value. Templates can't contain arrow functions, so <code>update(fn)</code> goes in a class method (like <code>changeQty</code> below).</p>
+
+  <!-- 2. computed chains + immutability -->
+  <h2>2. Derived state &amp; immutability</h2>
+  <p><code>visible</code>, <code>totalQty</code> and <code>totalPrice</code> are all computeds over the same <code>tickets</code> signal. Type in the filter: only <code>visible</code> re-runs, because it's the only one that reads <code>query</code>.</p>
+  <div class="demo">
+    <input #box [value]="query()" (input)="query.set(box.value)" placeholder="Filter sessions…" />
+
+    <ul class="tickets">
+      @for (t of visible(); track t.id) {
+        <li>
+          <span class="name">{{ t.name }}</span>
+          <span class="price">{{ t.price }} CHF</span>
+          <button type="button" (click)="changeQty(t.id, -1)" [disabled]="t.qty === 0" aria-label="Remove one">−</button>
+          <span class="qty">{{ t.qty }}</span>
+          <button type="button" (click)="changeQty(t.id, 1)" aria-label="Add one">+</button>
+          <button type="button" class="is-wrong" (click)="mutateQty(t.id)">+ by mutation ✘</button>
+        </li>
+      } @empty {
+        <li class="note">No session matches “{{ query() }}”.</li>
+      }
+    </ul>
+
+    <div class="totals" [class.is-stale]="actualQty() !== totalQty()">
+      <span>{{ totalQty() }} tickets · <strong>{{ totalPrice() }} CHF</strong></span>
+      @if (actualQty() !== totalQty()) {
+        <span>Stale! The rows add up to {{ actualQty() }}.</span>
+      }
+      <button type="button" (click)="reset()">Reset</button>
+    </div>
+  </div>
+  <p class="note">Click <strong>+ by mutation</strong>: the row number goes up (the template re-reads <code>t.qty</code> on every check), but the totals don't, because the array reference never changed, so the signal never fired and the computeds kept their cached value. Signals compare with <code>===</code>, like React's <code>setState</code>. Always <code>update()</code> with a new array / object.</p>
+
+  <!-- 3. effect -->
+  <h2>3. effect</h2>
+  <p>Two effects run in this page's constructor. Change a quantity and watch the <strong>browser tab title</strong>; reload the page and the quantities come back from <code>localStorage</code>.</p>
+  <ul>
+    <li>No dependency array: the effect re-runs when any signal it read last time changes. No stale closures, no missing deps.</li>
+    <li>Use it only for things <em>outside</em> Angular's view: DOM APIs, storage, logging, and later handing values to GSAP or Three.js.</li>
+    <li>Don't use it to compute one signal from another. That's what <code>computed</code> is for (same advice as "you might not need an effect" in React).</li>
+    <li>Effects run asynchronously, after change detection, not synchronously on <code>set()</code>. Several sets in a row cause one run.</li>
+    <li><code>untracked(() =&gt; x())</code> reads a signal without subscribing to it (≈ <code>useEffectEvent</code> / reading a ref in React).</li>
+  </ul>
+
+  <h2>Also good to know</h2>
+  <ul>
+    <li><code>linkedSignal(() =&gt; list()[0])</code>: a writable signal that resets when its source changes. Think "selected item that resets when the list changes", which in React needs a <code>key</code> reset or an effect.</li>
+    <li>The <code>LikeButton</code> from lesson 01 now uses a signal: compare it in the git diff.</li>
+    <li>Signals are what make <code>OnPush</code> and zoneless change detection practical (lesson 10). With zone.js on, plain fields still work, which is why the mutation demo half-works.</li>
+  </ul>
+</article>

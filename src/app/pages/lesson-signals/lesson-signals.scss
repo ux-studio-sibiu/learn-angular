@@ -1,0 +1,16 @@
+.tickets {
+  padding: 0; margin: 12px 0; list-style: none;
+
+  li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .name { flex: 1; min-width: 160px; }
+  .price { color: var(--muted); font-size: 0.9rem; }
+  .qty { width: 2ch; text-align: center; font-weight: 600; }
+  .is-wrong { border-style: dashed; color: var(--muted); font-size: 0.85rem; }
+}
+
+.totals {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
+  padding: 10px 14px; border-radius: 6px; background: var(--code-bg);
+
+  &.is-stale { outline: 2px solid var(--accent); }
+}
