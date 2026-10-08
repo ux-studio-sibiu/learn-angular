@@ -1,0 +1,72 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 01</p>
+  <h1>Components &amp; template bindings</h1>
+  <p>Angular templates are HTML with four extra syntaxes. Each one decides which way data flows: class → DOM, DOM → class, or both.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React (JSX)</th><th>jQuery</th></tr></thead>
+    <tbody>
+      <tr><td ngNonBindable><code>{{ name }}</code></td><td><code>&#123;name&#125;</code></td><td><code>$el.text(name)</code></td></tr>
+      <tr><td><code>[disabled]="isOff"</code></td><td><code>disabled=&#123;isOff&#125;</code></td><td><code>$el.prop('disabled', isOff)</code></td></tr>
+      <tr><td><code>(click)="save()"</code></td><td><code>onClick=&#123;save&#125;</code></td><td><code>$el.on('click', save)</code></td></tr>
+      <tr><td><code>#box</code> then <code>box.value</code></td><td><code>useRef</code> + <code>ref=&#123;box&#125;</code></td><td><code>$('#box').val()</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. Interpolation -->
+  <h2>1. Interpolation</h2>
+  <p>Any expression on the class: fields, methods, simple maths. It is turned into text (HTML-escaped, like JSX).</p>
+  <div class="demo">
+    <p>Name: <strong>{{ name }}</strong> · Upper: {{ name.toUpperCase() }} · Length: {{ name.length }} · Maths: {{ 6 * 7 }}</p>
+    <p>{{ greet() }}</p>
+  </div>
+  <p class="note">Template expressions can't use globals (<code>window</code>, <code>console</code>), <code>new</code> or assignments. Only event bindings may assign. This is stricter than JSX, where anything JavaScript goes.</p>
+
+  <!-- 2. Event binding + template reference variable -->
+  <h2>2. Event binding &amp; template references</h2>
+  <p><code>(event)="statement"</code> runs when the DOM event fires; <code>$event</code> is the native event. <code>#box</code> names an element so the template can read it directly.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <!-- [value] + (input) = a hand-made two-way binding, like a React controlled input -->
+      <input #box [value]="name" (input)="name = box.value" (keyup.enter)="submitted = box.value" placeholder="Type, then Enter" />
+      <button type="button" (click)="count = count + 1">Clicked {{ count }}×</button>
+    </div>
+    <p class="note">Live: {{ name }} · Submitted on Enter: {{ submitted || '—' }}</p>
+  </div>
+  <p class="note"><code>(keyup.enter)</code> is a key filter built into Angular. In React or jQuery you'd check <code>e.key === 'Enter'</code> yourself.</p>
+
+  <!-- 3. Property, class, style, attribute binding -->
+  <h2>3. Property, class, style &amp; attribute binding</h2>
+  <p><code>[x]="expr"</code> sets a DOM <em>property</em> from an expression. Without brackets, the value is just a static string.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="isActive = !isActive" [class.is-active]="isActive" [attr.aria-pressed]="isActive">Toggle active</button>
+      <button type="button" [disabled]="!isActive">Only enabled when active</button>
+      <button type="button" (click)="grow()">Grow bar</button>
+    </div>
+    <div class="bar" [style.width.%]="width" [class.is-active]="isActive"></div>
+    <p class="note">width = {{ width }}% · isActive = {{ isActive }}</p>
+  </div>
+  <table>
+    <tbody>
+      <tr><td><code>[class.is-active]="on"</code></td><td>toggle one class (≈ <code>classList.toggle</code>, or a <code>clsx</code> condition)</td></tr>
+      <tr><td><code>[style.width.%]="w"</code></td><td ngNonBindable>one style, with a unit suffix (≈ <code>style={{ width: w + '%' }}</code>)</td></tr>
+      <tr><td><code>[attr.aria-pressed]="on"</code></td><td>an HTML <em>attribute</em>, for things that aren't DOM properties (aria-*, data-*, colspan)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 4. Using a child component -->
+  <h2>4. Using another component</h2>
+  <p>Import the class in <code>imports: [LikeButton]</code>, then use its selector as a tag. Each tag is a separate instance with its own state.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <app-like-button />
+      <app-like-button />
+      <app-like-button />
+    </div>
+  </div>
+  <p class="note">Passing data into it (props) is lesson 04. Forgetting the import gives the error "'app-like-button' is not a known element".</p>
+
+  <h2>Under the hood</h2>
+  <p>There is no virtual DOM. The compiler turns the template into instructions that update only the bound spots. After each click or keystroke, zone.js tells Angular "something may have changed", and Angular re-checks every binding on the page and patches the ones whose value differs.</p>
+</article>
