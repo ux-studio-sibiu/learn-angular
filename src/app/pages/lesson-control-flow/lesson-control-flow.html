@@ -1,0 +1,87 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 02</p>
+  <h1>Control flow: &#64;if, &#64;for, &#64;switch</h1>
+  <p>Blocks that add, repeat or swap parts of the template. They read like Razor's <code>&#64;if</code> / <code>&#64;foreach</code>, but they are reactive: when the data changes, Angular adds or removes the DOM for you.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React (JSX)</th><th>Razor / jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>&#64;if (x) &#123; … &#125; &#64;else &#123; … &#125;</code></td><td><code>x ? a : b</code>, <code>x &amp;&amp; a</code></td><td><code>&#64;if</code> / <code>.show()</code> <code>.hide()</code></td></tr>
+      <tr><td><code>&#64;for (t of talks; track t.id)</code></td><td><code>talks.map(t =&gt; &lt;Li key=&#123;t.id&#125;/&gt;)</code></td><td><code>&#64;foreach</code> / <code>$.each</code> + <code>.append()</code></td></tr>
+      <tr><td><code>&#64;empty</code></td><td><code>talks.length === 0 &amp;&amp; …</code></td><td>an extra <code>if</code></td></tr>
+      <tr><td><code>&#64;switch</code> / <code>&#64;case</code></td><td>an object map or a <code>switch</code> in a helper</td><td><code>&#64;switch</code> (C#)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. @if -->
+  <h2>1. &#64;if, &#64;else if, &#64;else</h2>
+  <p>The element is <strong>removed from the DOM</strong> when false (like React), not hidden with CSS (like <code>.hide()</code>). For CSS hiding use <code>[hidden]="!x"</code> or a class.</p>
+  <div class="demo">
+    <button type="button" (click)="toggleUser()">{{ user ? 'Sign out' : 'Sign in' }}</button>
+    <!-- `as u` narrows the type: inside the block, u is non-null (≈ `user && <p>{user.name}</p>`) -->
+    @if (user; as u) {
+      <p>Welcome back, <strong>{{ u.name }}</strong> ({{ u.role }}).</p>
+    } @else {
+      <p class="note">Nobody is signed in.</p>
+    }
+  </div>
+
+  <!-- 2. @switch -->
+  <h2>2. &#64;switch</h2>
+  <p>Pick one branch by value. Handy for loading / error / ready states, or for mapping CMS block types to components.</p>
+  <div class="demo">
+    <div class="demo-row">
+      @for (s of statuses; track s) {
+        <button type="button" (click)="status = s" [class.is-active]="status === s">{{ s }}</button>
+      }
+    </div>
+    <p></p>
+    @switch (status) {
+      @case ('loading') { <div class="status">Loading…</div> }
+      @case ('error') { <div class="status is-error">Something went wrong.</div> }
+      @case ('done') { <div class="status">Loaded 3 talks.</div> }
+      @default { <div class="status">Waiting to start.</div> }
+    }
+  </div>
+
+  <!-- 3. @for + track -->
+  <h2>3. &#64;for, track &amp; &#64;empty</h2>
+  <p><code>track</code> is required, and it plays the same role as React's <code>key</code>: it tells Angular which DOM row belongs to which item. Like a few talks, then <strong>shuffle</strong> and compare the two lists.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="add()">Add</button>
+      <button type="button" (click)="shuffle()" [disabled]="talks.length < 2">Shuffle</button>
+      <button type="button" (click)="clear()" [disabled]="talks.length === 0">Clear</button>
+    </div>
+    <p></p>
+
+    <div class="lists">
+      <div>
+        <p class="list-title">track t.id ✔</p>
+        <ul class="talk-list">
+          <!-- $index, $first, $last, $even, $odd, $count are built-in loop variables -->
+          @for (t of talks; track t.id; let i = $index, first = $first) {
+            <li [class.is-first]="first"><span class="index">{{ i + 1 }}</span><span class="title">{{ t.title }}</span><app-like-button /><button type="button" (click)="remove(t.id)" aria-label="Remove">✕</button></li>
+          } @empty {
+            <li class="note">No talks. Add one.</li>
+          }
+        </ul>
+      </div>
+
+      <div>
+        <p class="list-title">track $index ✘</p>
+        <ul class="talk-list">
+          @for (t of talks; track $index) {
+            <li><span class="index">{{ $index + 1 }}</span><span class="title">{{ t.title }}</span><app-like-button /></li>
+          } @empty {
+            <li class="note">No talks.</li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+  <p class="note">With <code>track t.id</code> the like counts move with their talk: Angular moves the existing DOM rows. With <code>track $index</code> the rows stay put and only the text changes, so the likes now sit on the wrong talk. It's the same bug as <code>key=&#123;index&#125;</code> in React, and it's the reason <code>track</code> exists. Index is fine for static lists that never reorder.</p>
+
+  <h2>You'll still see the old syntax</h2>
+  <p>Before Angular 17 these were structural directives: <code>*ngIf="user as u; else none"</code>, <code>*ngFor="let t of talks; trackBy: byId"</code>, <code>[ngSwitch]</code>. Existing codebases (probably WEF's too) are full of them. They work the same way, but need <code>imports: [NgIf, NgFor]</code>, and <code>trackBy</code> was optional, which is why so many lists re-rendered more than needed.</p>
+</article>

@@ -1,0 +1,20 @@
+.lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+.talk-list {
+  padding: 0; margin: 8px 0 0; list-style: none;
+
+  li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  li.is-first { font-weight: 600; }
+  .index { width: 1.5em; color: var(--muted); font-size: 0.85rem; }
+  .title { flex: 1; }
+}
+
+.list-title { margin: 0; font-size: 0.95rem; }
+
+.status {
+  padding: 10px 14px; border-radius: 6px; background: var(--code-bg);
+
+  &.is-error { color: var(--accent); }
+}
+
+button.is-active { border-color: var(--accent); color: var(--accent); }
