@@ -1,0 +1,61 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 06</p>
+  <h1>Routing in depth</h1>
+  <p>Next.js builds routes from folders. Angular declares them in code, which is closer to an MVC route table like <code>&#123;controller&#125;/&#123;action&#125;/&#123;id&#125;</code>. The concepts are the same: params, nested layouts, lazy pages, redirects.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>Next.js</th><th>ASP.NET MVC / jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>&#123; path: 'talks/:id' &#125;</code></td><td><code>app/talks/[id]/page.tsx</code></td><td><code>talks/&#123;id&#125;</code> route</td></tr>
+      <tr><td><code>id = input()</code> (with <code>withComponentInputBinding</code>)</td><td>the <code>params</code> prop</td><td>action parameter <code>int id</code></td></tr>
+      <tr><td><code>sort = input()</code> from <code>?sort=</code></td><td><code>searchParams</code></td><td><code>Request.Query["sort"]</code></td></tr>
+      <tr><td><code>children</code> + a nested <code>&lt;router-outlet /&gt;</code></td><td>nested <code>layout.tsx</code></td><td>nested layouts / partials</td></tr>
+      <tr><td><code>loadComponent</code> / <code>loadChildren</code></td><td>automatic per page, or <code>next/dynamic</code></td><td>—</td></tr>
+      <tr><td><code>canActivate: [guard]</code></td><td><code>middleware.ts</code> redirect</td><td><code>[Authorize]</code> filter</td></tr>
+      <tr><td><code>[routerLink]</code> / <code>router.navigate()</code></td><td><code>&lt;Link&gt;</code> / <code>router.push()</code></td><td><code>Url.Action</code> / <code>RedirectToAction</code>, <code>location.href</code></td></tr>
+      <tr><td><code>title: resolverFn</code></td><td><code>generateMetadata</code></td><td><code>ViewBag.Title</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>1. Nested routes, params &amp; guards (live)</h2>
+  <p>This page is a <strong>layout route</strong>. The box below is its own <code>&lt;router-outlet /&gt;</code>: the URL decides which child renders inside it, while this text stays. Watch the address bar and the tab title as you click.</p>
+
+  <div class="demo">
+    <nav class="sub-nav">
+      <a routerLink="/lessons/routing" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Talks</a>
+      <a routerLink="/lessons/routing/backstage" routerLinkActive="is-active">Backstage (guarded)</a>
+      <span class="session">
+        {{ session.signedIn() ? 'Signed in' : 'Signed out' }}
+        <button type="button" (click)="session.toggle()">{{ session.signedIn() ? 'Sign out' : 'Sign in' }}</button>
+      </span>
+    </nav>
+
+    @if (denied() && !session.signedIn()) {
+      <p class="warning">The guard sent you back here (?denied=1). Sign in and try Backstage again.</p>
+    }
+
+    <router-outlet />
+  </div>
+
+  <ul class="note">
+    <li><strong>Component reuse:</strong> going from talk 1 to talk 2 keeps the same component instance and only changes the <code>id</code> input. That's why the detail page derives everything with <code>computed</code> from <code>id()</code>. Older code read <code>route.snapshot.params</code> once in <code>ngOnInit</code>, and the page wouldn't update.</li>
+    <li>Route params are always <strong>strings</strong>: convert them (<code>Number(id())</code>), and handle "not found" (try <code>/lessons/routing/talks/99</code>).</li>
+    <li>Guards run <strong>on navigation only</strong>. Signing out while on Backstage doesn't kick you out.</li>
+  </ul>
+
+  <h2>2. Lazy loading (this site was just migrated)</h2>
+  <p>Until this lesson, <code>app.routes.ts</code> imported every page at the top, so every page was in the main bundle, even ones you never visit. Now each lesson is <code>loadComponent: () =&gt; import(…)</code>, and this lesson's routes are a separate file loaded with <code>loadChildren</code>.</p>
+  <ul>
+    <li>Run <code>ng build</code> and compare: the main chunk shrank, and each lesson is a "Lazy chunk file". Open DevTools → Network, click a lesson, and watch its chunk arrive.</li>
+    <li>Next.js does this automatically per page. Angular only splits where you use <code>loadComponent</code> / <code>loadChildren</code> (or <code>&#64;defer</code>, lesson 11). A static <code>import</code> anywhere pulls the code back into the main bundle.</li>
+    <li>The roadmap stays eager: it's the landing page, so lazy-loading it would only add a request.</li>
+  </ul>
+
+  <h2>3. Router features switched on in app.config.ts</h2>
+  <ul>
+    <li><code>withComponentInputBinding()</code>: route params, query params and route data arrive as component inputs (used above).</li>
+    <li><code>withViewTransitions()</code>: route changes use the browser's View Transitions API, so pages cross-fade. It's a first look at lesson 13: it can be styled with CSS (<code>::view-transition-old/new</code>).</li>
+  </ul>
+
+  <p class="note">Not covered here: <strong>resolvers</strong> (load data before the route activates) come with HTTP in lesson 07, and <code>canDeactivate</code> ("you have unsaved changes") with forms in lesson 08.</p>
+</article>

@@ -1,0 +1,26 @@
+// Shared by the layout and its child pages (each lists this file in styleUrl)
+.sub-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
+
+  .session { margin-left: auto; }
+}
+
+a { color: var(--accent); }
+a.is-active { font-weight: 700; text-decoration: none; }
+
+.speaker { color: var(--muted); font-size: 0.85rem; }
+
+.nsc-talk-list {
+  ul { padding-left: 18px; margin: 0; }
+  li { margin-bottom: 6px; }
+  .sort { display: flex; gap: 12px; margin-top: 0; font-size: 0.9rem; }
+}
+
+.nsc-talk-detail, .nsc-backstage {
+  h3 { margin: 0 0 4px; }
+  .links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+}
+
+.note { color: var(--muted); font-size: 0.9rem; }
+.warning { color: var(--accent); font-weight: 600; }
