@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FavoritesStore } from './services/favorites-store';
 
 // Root component ≈ Next.js app/layout.tsx. Standalone: it imports what its template uses.
 @Component({
@@ -8,4 +9,6 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {}
+export class App {
+  protected readonly favorites = inject(FavoritesStore);
+}

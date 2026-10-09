@@ -1,0 +1,20 @@
+.talks {
+  padding: 0; margin: 0; list-style: none;
+
+  li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+}
+
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+.track { position: relative; height: 32px; margin-top: 16px; border-radius: 16px; background: var(--code-bg); overflow: hidden; }
+
+.dot {
+  position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent);
+  animation: slide 2s ease-in-out infinite alternate;
+
+  &.is-reduced { animation: none; left: calc(50% - 12px); }
+}
+
+@keyframes slide { to { left: calc(100% - 28px); } }
+
+button.is-active { border-color: var(--accent); color: var(--accent); }

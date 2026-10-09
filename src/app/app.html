@@ -7,7 +7,11 @@
     <a routerLink="/lessons/components" routerLinkActive="is-active">01 Components</a>
     <a routerLink="/lessons/control-flow" routerLinkActive="is-active">02 Control flow</a>
     <a routerLink="/lessons/signals" routerLinkActive="is-active">03 Signals</a>
-    <a routerLink="/lessons/inputs" routerLinkActive="is-active">04 Inputs</a>  </nav>
+    <a routerLink="/lessons/inputs" routerLinkActive="is-active">04 Inputs</a>
+    <a routerLink="/lessons/services" routerLinkActive="is-active">05 Services</a>
+  </nav>
+  <!-- Lesson 05: the header and the lesson page are far apart in the tree, but inject the same FavoritesStore instance -->
+  <a class="favorites-badge" routerLink="/lessons/services" [class.has-items]="favorites.count() > 0" aria-label="Favorites">★ {{ favorites.count() }}</a>
 </header>
 
 <main class="site-main">

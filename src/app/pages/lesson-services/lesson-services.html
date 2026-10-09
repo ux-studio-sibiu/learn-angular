@@ -1,0 +1,71 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 05</p>
+  <h1>Services &amp; dependency injection</h1>
+  <p>A <strong>service</strong> is a plain class that holds shared state or logic. <strong>Dependency injection</strong> (DI) is how components get it: they ask with <code>inject(SomeService)</code>, and Angular hands them the right instance. No prop drilling, no globals.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React</th><th>ASP.NET MVC</th></tr></thead>
+    <tbody>
+      <tr><td><code>&#64;Injectable(&#123; providedIn: 'root' &#125;)</code></td><td>a Zustand store / a context provider at the app root</td><td><code>services.AddSingleton&lt;T&gt;()</code></td></tr>
+      <tr><td><code>providers: [CounterStore]</code> on a component</td><td><code>&lt;Ctx.Provider&gt;</code> around a subtree</td><td><code>AddScoped&lt;T&gt;()</code> (one per scope)</td></tr>
+      <tr><td><code>inject(FavoritesStore)</code></td><td><code>useContext(Ctx)</code> / <code>useStore()</code></td><td>constructor injection in a controller</td></tr>
+      <tr><td>a service with signals</td><td>a custom hook backed by a store</td><td>a service class</td></tr>
+    </tbody>
+  </table>
+  <p class="note">jQuery's nearest equivalent is a global object (<code>window.App.favorites</code>) or the module pattern. DI gives you the same sharing, but each consumer declares what it needs, and tests can swap in a fake.</p>
+
+  <!-- 1. Root singleton -->
+  <h2>1. A root service: shared across the whole app</h2>
+  <p>Star a few talks, then look at the <strong>★ badge in the site header</strong>. The header and this list are far apart in the component tree and pass nothing to each other. Both inject the same <code>FavoritesStore</code> instance.</p>
+  <div class="demo">
+    <ul class="talks">
+      @for (t of talks; track t.id) {
+        <li><span>{{ t.title }}</span><app-favorite-toggle [id]="t.id" /></li>
+      }
+    </ul>
+    <div class="demo-row">
+      <p class="note">{{ favorites.count() }} starred</p>
+      <button type="button" (click)="favorites.clear()" [disabled]="favorites.count() === 0">Clear</button>
+    </div>
+  </div>
+  <p class="note">Navigate to another lesson and back: the stars stay. A root service lives as long as the app, while component state (like the like buttons in lesson 01) is gone when the route changes. In-memory only, so a reload clears it.</p>
+
+  <!-- 2. MotionPreference -->
+  <h2>2. A service you'll reuse: MotionPreference</h2>
+  <p>One place answers "should we animate?". It follows the OS <code>prefers-reduced-motion</code> setting live, and lets the user override it on this site. The CSS, GSAP and Three.js lessons will all read <code>motion.reduced()</code> instead of each writing its own media query.</p>
+  <div class="demo">
+    <div class="demo-row">
+      @for (m of modes; track m) {
+        <button type="button" (click)="motion.mode.set(m)" [class.is-active]="motion.mode() === m">{{ m }}</button>
+      }
+      <span class="note">reduced = <strong>{{ motion.reduced() }}</strong></span>
+    </div>
+    <div class="track"><div class="dot" [class.is-reduced]="motion.reduced()"></div></div>
+  </div>
+  <p class="note">It injects <code>PLATFORM_ID</code>, a built-in token, to check it's running in a browser before touching <code>matchMedia</code>. That doesn't matter yet, but on the server (lesson 12) <code>window</code> doesn't exist.</p>
+
+  <!-- 3. Component-scoped -->
+  <h2>3. Scoped services: one instance per component</h2>
+  <p>Each panel lists <code>providers: [CounterStore]</code>, so each gets its <strong>own</strong> store. The buttons are projected content; they inject "the nearest <code>CounterStore</code> above me" and don't know which panel they're in.</p>
+  <div class="demo">
+    <div class="panels">
+      <app-scoped-panel label="Panel A">
+        <app-counter-button />
+        <app-counter-button />
+      </app-scoped-panel>
+      <app-scoped-panel label="Panel B">
+        <app-counter-button />
+      </app-scoped-panel>
+    </div>
+  </div>
+  <p class="note">This is how compound components (tabs, accordions, a form and its fields) share state without <code>cloneElement</code> or prop drilling. The parent provides a small store, the children inject it. It's the Angular answer to the accordion pattern in your React components.</p>
+
+  <h2>Rules worth knowing</h2>
+  <ul>
+    <li><code>inject()</code> only works in an <strong>injection context</strong>: field initializers and the constructor. Not inside a click handler or <code>setTimeout</code>. Similar to the rules of hooks, but about <em>where</em>, not call order.</li>
+    <li>Older code uses <strong>constructor injection</strong>: <code>constructor(private favorites: FavoritesStore) &#123;&#125;</code>. Same result. <code>inject()</code> is the modern style.</li>
+    <li>DI looks <strong>up the tree</strong>: the component's own providers, then its parents', then the root. If nothing provides it, you get <code>NullInjectorError: No provider for X</code>.</li>
+    <li>Keep state private and writable inside the service, and expose read-only <code>computed</code>s plus methods (<code>toggle</code>, <code>clear</code>). That's a small store with no library.</li>
+    <li>Before signals, services exposed RxJS <code>BehaviorSubject</code>s and templates used the <code>| async</code> pipe. Expect to see that in existing codebases.</li>
+  </ul>
+</article>
