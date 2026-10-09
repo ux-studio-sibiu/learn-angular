@@ -1,0 +1,85 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 04</p>
+  <h1>Inputs, outputs &amp; ng-content</h1>
+  <p>How components talk to each other. Same rule as React: data goes <strong>down</strong> (inputs ≈ props), events go <strong>up</strong> (outputs ≈ callback props), and markup can be passed in as content (ng-content ≈ children).</p>
+
+  <table>
+    <thead><tr><th>Angular (child class)</th><th>Parent template</th><th>React</th></tr></thead>
+    <tbody>
+      <tr><td><code>label = input.required&lt;string&gt;()</code></td><td><code>&lt;app-chip label="GSAP" /&gt;</code> or <code>[label]="tag"</code></td><td><code>&lt;Chip label=&#123;tag&#125; /&gt;</code></td></tr>
+      <tr><td><code>max = input(10)</code></td><td><code>[max]="8"</code></td><td>prop with a default value</td></tr>
+      <tr><td><code>remove = output()</code> → <code>remove.emit()</code></td><td><code>(remove)="removeTag(tag)"</code></td><td><code>onRemove=&#123;() =&gt; removeTag(tag)&#125;</code></td></tr>
+      <tr><td><code>value = model(0)</code></td><td><code>[(value)]="guests"</code></td><td><code>value=&#123;guests&#125; onChange=&#123;setGuests&#125;</code></td></tr>
+      <tr><td><code>&lt;ng-content /&gt;</code></td><td>markup between the tags</td><td><code>&#123;children&#125;</code></td></tr>
+      <tr><td><code>&lt;ng-content select="[card-title]" /&gt;</code></td><td><code>&lt;h3 card-title&gt;…&lt;/h3&gt;</code></td><td><code>title=&#123;&lt;h3&gt;…&lt;/h3&gt;&#125;</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. ng-content -->
+  <h2>1. Content projection (children &amp; slots)</h2>
+  <p>The card doesn't take a <code>title</code> string or a <code>body</code> config. The parent writes the markup, and the card decides where each piece goes. That's composition over configuration, the same approach as your React components.</p>
+  <div class="demo">
+    <div class="cards">
+      <app-card>
+        <h3 card-title>The future of jobs</h3>
+        <p>Default slot: anything without a slot attribute lands in the plain &lt;ng-content /&gt;.</p>
+        <app-like-button card-footer />
+      </app-card>
+
+      <app-card featured>
+        <h3 card-title>Featured: AI governance</h3>
+        <p>Same component, <code>featured</code> boolean input. The class is set on the host element.</p>
+        <app-like-button card-footer />
+      </app-card>
+
+      <app-card>
+        <h3 card-title>No footer</h3>
+        <p>Nothing was projected into the footer slot, so it's empty and hidden with CSS.</p>
+      </app-card>
+    </div>
+  </div>
+  <p class="note"><strong>Different from React:</strong> projected content is created by the <em>parent</em>, always, even if the child never shows it. Wrapping <code>&lt;ng-content /&gt;</code> in an <code>&#64;if</code> hides it but doesn't stop it from being created. For "render only when needed" you pass an <code>&lt;ng-template&gt;</code> instead (≈ a render prop). That comes up later.</p>
+
+  <!-- 2. input + output -->
+  <h2>2. input() &amp; output()</h2>
+  <p>Each chip receives a <code>label</code> and emits <code>remove</code>. It doesn't touch the list: the parent owns the data and decides what removing means.</p>
+  <div class="demo">
+    <input #tagBox (keyup.enter)="addTag(tagBox.value); tagBox.value = ''" placeholder="Add a tag, press Enter" />
+    <div class="tags">
+      @for (tag of tags(); track tag) {
+        <app-chip [label]="tag" (remove)="removeTag(tag)" />
+      } @empty {
+        <span class="note">No tags left.</span>
+      }
+    </div>
+    @if (lastRemoved()) {
+      <p class="note">Parent heard (remove) for “{{ lastRemoved() }}”.</p>
+    }
+  </div>
+  <ul class="note">
+    <li>Inputs are <strong>signals</strong>: the child reads <code>this.label()</code>, and can build a <code>computed</code> from it (≈ deriving from props).</li>
+    <li>Inputs are read-only inside the child. Writing to one is a compile error, same as mutating props in React.</li>
+    <li>Outputs aren't DOM events: they don't bubble. Only the direct parent can listen.</li>
+    <li>Name outputs after what happened (<code>remove</code>, <code>select</code>), without an <code>on</code> prefix.</li>
+  </ul>
+
+  <!-- 3. model -->
+  <h2>3. model() &amp; two-way binding</h2>
+  <p>The stepper edits a value that the parent owns. <code>[(value)]</code>, the "banana in a box", is shorthand for <code>[value]="guests()" (valueChange)="guests.set($event)"</code>.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <span>Guests</span>
+      <app-stepper [(value)]="guests" [min]="1" [max]="8" />
+      <span class="note">Parent: {{ guests() }} × 40 CHF = <strong>{{ total() }} CHF</strong></span>
+      <button type="button" (click)="guests.set(1)">Parent resets to 1</button>
+    </div>
+  </div>
+  <p class="note">The data still has one owner (the parent's <code>guests</code> signal). <code>model()</code> just saves you writing the input + output pair, which is what React does with <code>value</code> + <code>onChange</code>. In MVC terms, it's model binding for a component.</p>
+
+  <h2>Also good to know</h2>
+  <ul>
+    <li><strong>Host element:</strong> <code>host: &#123; class: 'nsc-card' &#125;</code> puts classes and bindings on the <code>&lt;app-card&gt;</code> tag itself; style it with <code>:host</code> / <code>:host(.featured)</code>.</li>
+    <li><strong>Older syntax</strong> you'll see in existing code: <code>&#64;Input() label!: string;</code> and <code>&#64;Output() remove = new EventEmitter();</code>. Same idea, but they aren't signals. <code>ng generate &#64;angular/core:signal-input-migration</code> converts them.</li>
+    <li>No context-style prop drilling fix yet: sharing state across distant components is lesson 05 (services &amp; DI).</li>
+  </ul>
+</article>

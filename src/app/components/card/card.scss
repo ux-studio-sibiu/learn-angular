@@ -1,0 +1,11 @@
+// :host = the <app-card> element. Angular components keep their tag in the DOM, so it needs a display value.
+:host {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px; border: 1px solid var(--line); border-radius: 8px;
+}
+
+:host(.featured) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.header { font-weight: 700; }
+.body { flex: 1; color: var(--muted); font-size: 0.95rem; }
+.footer:empty, .header:empty { display: none; }
