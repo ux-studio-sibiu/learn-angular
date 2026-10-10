@@ -1,0 +1,23 @@
+.registration {
+  display: grid; gap: 14px;
+
+  label { display: grid; gap: 4px; font-size: 0.9rem; }
+  .inline { display: flex; align-items: center; gap: 8px; }
+  input[type='checkbox'] { width: auto; }
+  select { font: inherit; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+}
+
+// Angular adds ng-valid / ng-invalid, ng-touched / ng-untouched, ng-dirty / ng-pristine, ng-pending to every bound control
+input.ng-invalid.ng-touched { border-color: var(--accent); }
+input.ng-pending { border-style: dashed; }
+
+.error { margin: 0; color: var(--accent); font-size: 0.85rem; }
+.hint { margin: 0; color: var(--muted); font-size: 0.8rem; }
+
+.state {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 8px 12px; border-radius: 6px;
+  background: var(--code-bg); font-family: ui-monospace, Consolas, monospace; font-size: 0.8rem;
+}
+
+pre { margin: 8px 0 0; padding: 10px 12px; border-radius: 6px; background: var(--code-bg); font-size: 0.8rem; overflow-x: auto; }

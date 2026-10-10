@@ -1,0 +1,116 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 08</p>
+  <h1>Forms</h1>
+  <p>Angular has two built-in form systems. <strong>Reactive forms</strong> define the form model and its rules in TypeScript, and the template only binds to it. <strong>Template-driven forms</strong> put the rules in HTML attributes. Both track value, validity and interaction state for you.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React</th><th>ASP.NET MVC / jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>fb.group(&#123; email: ['', Validators.email] &#125;)</code></td><td>react-hook-form + a zod schema</td><td>a view model with <code>[EmailAddress]</code></td></tr>
+      <tr><td><code>formControlName="email"</code></td><td><code>&#123;...register('email')&#125;</code></td><td><code>asp-for="Email"</code></td></tr>
+      <tr><td><code>form.valid</code> / <code>control.errors</code></td><td><code>formState.isValid</code> / <code>errors.email</code></td><td><code>ModelState.IsValid</code>, <code>asp-validation-for</code></td></tr>
+      <tr><td><code>ng-invalid</code>, <code>ng-touched</code> CSS classes</td><td>your own class logic</td><td>jQuery Validate's <code>.error</code> / <code>.input-validation-error</code></td></tr>
+      <tr><td><code>[(ngModel)]</code> (template-driven)</td><td>a controlled input: <code>value</code> + <code>onChange</code></td><td><code>$('#email').val()</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. Reactive form -->
+  <h2>1. A reactive form with every kind of validator</h2>
+  <div class="demo">
+    <form class="registration" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label>Name
+        <input formControlName="name" autocomplete="name" />
+        @if (showError('name')) {
+          <p class="error">{{ form.controls.name.hasError('required') ? 'Name is required.' : 'At least 2 characters.' }}</p>
+        }
+      </label>
+
+      <label>Email
+        <input formControlName="email" type="email" autocomplete="email" />
+        <p class="hint">Validated on blur. Try taken&#64;example.com (async check, 600 ms).</p>
+        @if (form.controls.email.pending) {
+          <p class="hint">Checking availability…</p>
+        } @else if (showError('email')) {
+          <p class="error">
+            @if (form.controls.email.hasError('required')) { Email is required. }
+            @else if (form.controls.email.hasError('email')) { That doesn't look like an email. }
+            @else if (form.controls.email.hasError('taken')) { That email is already registered. }
+          </p>
+        }
+      </label>
+
+      <label>Session
+        <select formControlName="session">
+          @for (s of sessions; track s) { <option [value]="s">{{ s }}</option> }
+        </select>
+      </label>
+
+      <label>Tickets (1–8)
+        <input formControlName="guests" type="number" min="1" max="8" />
+        @if (showError('guests')) { <p class="error">Between 1 and 8.</p> }
+      </label>
+
+      <label class="inline"><input formControlName="bringGuest" type="checkbox" /> I'm bringing a guest</label>
+      @if (form.controls.bringGuest.value) {
+        <label>Guest name
+          <input formControlName="guestName" />
+          @if (form.hasError('guestName') && form.controls.guestName.touched) { <p class="error">Name your guest (cross-field rule on the group).</p> }
+        </label>
+      }
+
+      <label>Ticket code (optional)
+        <input formControlName="ticket" placeholder="WEF-1234" />
+        @if (showError('ticket')) { <p class="error">Format: WEF- followed by 4 digits (custom validator).</p> }
+      </label>
+
+      <div class="actions">
+        <button type="submit">Register</button>
+        <button type="button" (click)="reset()">Reset</button>
+      </div>
+    </form>
+
+    <p></p>
+    <!-- The form's own state flags, all updated by Angular -->
+    <div class="state">
+      <span>status: {{ form.status }}</span>
+      <span>dirty: {{ form.dirty }}</span>
+      <span>touched: {{ form.touched }}</span>
+      <span>live name: “{{ live().name }}”</span>
+    </div>
+
+    @if (submitted(); as data) {
+      <!-- | json is a pipe: a template-only formatter (≈ calling JSON.stringify in JSX). Pipes come up again later. -->
+      <pre>{{ data | json }}</pre>
+    }
+  </div>
+  <ul class="note">
+    <li>Click <strong>Register</strong> with an empty form: <code>markAllAsTouched()</code> reveals every error at once, like ModelState errors after a POST.</li>
+    <li><strong>Unsaved changes:</strong> type something, then click another lesson in the nav. The route's <code>canDeactivate</code> guard asks you to confirm. After a successful submit, the form is pristine again and you can leave freely.</li>
+    <li>Typed forms: <code>form.getRawValue().guests</code> is a <code>number</code>, and a typo like <code>form.controls.emial</code> is a compile error.</li>
+  </ul>
+
+  <!-- 2. Template-driven -->
+  <h2>2. Template-driven: rules as attributes</h2>
+  <p>For something tiny, like a newsletter box. The validators are the HTML attributes (<code>required</code>, <code>email</code>), and <code>[(ngModel)]</code> binds straight to a signal.</p>
+  <div class="demo">
+    <form #nf="ngForm" (ngSubmit)="subscribedAs.set(newsletterEmail())" class="demo-row">
+      <input name="newsletter" type="email" [(ngModel)]="newsletterEmail" #ne="ngModel" required email placeholder="you@example.com" />
+      <button type="submit" [disabled]="nf.invalid">Subscribe</button>
+    </form>
+    @if (ne.invalid && ne.touched) {
+      <p class="error">Enter a valid email.</p>
+    }
+    @if (subscribedAs()) {
+      <p class="note">Subscribed as {{ subscribedAs() }}.</p>
+    }
+  </div>
+  <p class="note">Template-driven feels like jQuery Validate (rules in markup), but it gets hard to test and reason about as forms grow. Reactive forms are the default for anything with real validation, which is what you'll see in most codebases.</p>
+
+  <h2>Good to know</h2>
+  <ul>
+    <li><strong>Validators are plain functions</strong> that return <code>null</code> or an error object. Custom ones are a few lines (see <code>ticketCode</code>), and group-level ones handle rules that span several fields.</li>
+    <li><code>updateOn: 'blur'</code> validates when you leave the field, which keeps async checks from firing on every keystroke.</li>
+    <li>Wrapping a custom component (like the lesson 04 stepper) as a form control means implementing <code>ControlValueAccessor</code>. That's the Angular way to make design-system inputs work with forms.</li>
+    <li>Signal-based forms are experimental in newer Angular versions (v21+). In v20 and in existing code, reactive forms with Observables are the standard.</li>
+  </ul>
+</article>
