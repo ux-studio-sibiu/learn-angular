@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
+import { talksResolver } from './services/talks-api';
 
 // ≈ Next.js app/ folders, but declared in code (like MVC route tables).
 // Lesson 06: pages are lazy. Each import() becomes its own chunk, downloaded on first visit (≈ next/dynamic).
@@ -12,5 +13,6 @@ export const routes: Routes = [
   { path: 'lessons/inputs', loadComponent: () => import('./pages/lesson-inputs/lesson-inputs').then(m => m.LessonInputs), title: '04 Inputs & outputs' },
   { path: 'lessons/services', loadComponent: () => import('./pages/lesson-services/lesson-services').then(m => m.LessonServices), title: '05 Services & DI' },
   { path: 'lessons/routing', loadChildren: () => import('./pages/lesson-routing/routing.routes').then(m => m.routingRoutes) }, // a whole route subtree
+  { path: 'lessons/http', loadComponent: () => import('./pages/lesson-http/lesson-http').then(m => m.LessonHttp), resolve: { talks: talksResolver }, title: '07 HTTP' },
   { path: '**', redirectTo: '' }
 ];

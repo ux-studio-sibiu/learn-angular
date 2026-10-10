@@ -1,0 +1,7 @@
+[
+  { "id": 1, "title": "The future of jobs", "speaker": "A. Rivera", "summary": "Which skills rise and fall as automation spreads." },
+  { "id": 2, "title": "Climate & nature", "speaker": "M. Okafor", "summary": "Financing the transition without leaving regions behind." },
+  { "id": 3, "title": "AI governance", "speaker": "L. Chen", "summary": "Rules for models that cross every border." },
+  { "id": 4, "title": "Global health", "speaker": "S. Novak", "summary": "Preparing for the next pandemic, cheaply." },
+  { "id": 5, "title": "Cities of 2050", "speaker": "J. Haddad", "summary": "Density, heat and the shape of urban life." }
+]

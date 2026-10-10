@@ -1,0 +1,20 @@
+.talk-ids { margin-bottom: 12px; }
+
+.result {
+  min-height: 64px; padding: 12px 14px; border-radius: 6px; background: var(--code-bg);
+
+  h3 { margin: 0 0 4px; }
+  p { margin: 0; }
+  &.is-loading { opacity: 0.6; }
+  &.is-error { color: var(--accent); }
+}
+
+.log {
+  margin: 0; padding: 0; list-style: none; font-family: ui-monospace, Consolas, monospace; font-size: 0.8rem;
+
+  li { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .url { flex: 1; }
+  .is-error { color: var(--accent); }
+}
+
+button.is-active { border-color: var(--accent); color: var(--accent); }

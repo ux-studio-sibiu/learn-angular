@@ -1,0 +1,96 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 07</p>
+  <h1>HTTP &amp; data loading</h1>
+  <p>Angular ships its own HTTP client, injected as a service. The "API" here is static JSON in <code>public/api/</code>, and an interceptor adds 700 ms of latency so you can see loading states. The same data is loaded three ways.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React / Next.js</th><th>jQuery / MVC</th></tr></thead>
+    <tbody>
+      <tr><td><code>inject(HttpClient).get&lt;T&gt;(url)</code></td><td><code>fetch(url).then(r =&gt; r.json())</code>, axios</td><td><code>$.getJSON(url)</code> / <code>HttpClient</code> in .NET</td></tr>
+      <tr><td>Observable + <code>.subscribe()</code></td><td>Promise + <code>.then()</code></td><td>jqXHR deferred <code>.done()</code></td></tr>
+      <tr><td><code>httpResource(() =&gt; url)</code></td><td>TanStack Query <code>useQuery</code>, SWR</td><td>—</td></tr>
+      <tr><td>route <code>resolve</code></td><td>loading data in a server component / loader before render</td><td>load the model in the action, then <code>return View(model)</code></td></tr>
+      <tr><td><code>withInterceptors([...])</code></td><td>axios interceptors / a fetch wrapper</td><td><code>$.ajaxSetup</code> / DelegatingHandler</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. Resolver -->
+  <h2>1. Resolver: load before the page shows</h2>
+  <p>This route has <code>resolve: &#123; talks: talksResolver &#125;</code>. The router waited for the request, then created this page with the data as an input. Did you notice the ~0.7 s pause when you clicked the nav link? That's the trade-off: no loading spinner, but navigation feels slower.</p>
+  <div class="demo">
+    <p>Resolved before render: <strong>{{ talks().length }} talks</strong>: {{ talks()[0].title }}, {{ talks()[1].title }}, …</p>
+  </div>
+
+  <!-- 2. httpResource -->
+  <h2>2. httpResource: reactive, with loading &amp; error states</h2>
+  <p>The URL is a function of the <code>selectedId</code> signal. Click around quickly: each change re-fetches, and a request that's no longer needed is cancelled. 99 doesn't exist.</p>
+  <div class="demo">
+    <div class="demo-row talk-ids">
+      @for (id of [1, 2, 3, 4, 5, 99]; track id) {
+        <button type="button" (click)="selectedId.set(id)" [class.is-active]="selectedId() === id">{{ id }}</button>
+      }
+      <button type="button" (click)="talk.reload()" [disabled]="!selectedId()">Reload</button>
+    </div>
+
+    <!-- status(): 'idle' | 'loading' | 'reloading' | 'resolved' | 'error' | 'local' -->
+    <div class="result" [class.is-loading]="talk.isLoading()" [class.is-error]="talk.error()">
+      @if (talk.error()) {
+        <p>Couldn't load talk {{ selectedId() }} (status: {{ talk.status() }}).</p>
+      } @else if (talk.hasValue()) {
+        <h3>{{ talk.value().title }}</h3>
+        <p>{{ talk.value().speaker }}: {{ talk.value().summary }}</p>
+      } @else if (talk.isLoading()) {
+        <p>Loading…</p>
+      } @else {
+        <p class="note">Pick a talk.</p>
+      }
+    </div>
+  </div>
+  <p class="note">Like <code>useQuery</code>, it gives you <code>value()</code>, <code>isLoading()</code>, <code>error()</code> and <code>reload()</code> as signals, with no <code>useEffect</code> + three <code>useState</code>s. Unlike TanStack Query there's no shared cache between components. In v20 it's marked experimental, but it's the direction Angular is going.</p>
+
+  <!-- 3. HttpClient by hand -->
+  <h2>3. HttpClient + subscribe: the classic way</h2>
+  <p>Call the service, subscribe, copy the result into signals. This is what most existing Angular code looks like (often with RxJS operators like <code>map</code>, <code>switchMap</code>, <code>catchError</code> in between).</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="load()" [disabled]="manualLoading()">Load talks</button>
+      <button type="button" (click)="load(true)" [disabled]="manualLoading()">Load a missing file (404)</button>
+    </div>
+    <p></p>
+    <div class="result" [class.is-loading]="manualLoading()" [class.is-error]="manualError()">
+      @if (manualLoading()) {
+        <p>Loading…</p>
+      } @else if (manualError()) {
+        <p>Request failed: {{ manualError() }}</p>
+      } @else if (manual(); as list) {
+        <p>Loaded {{ list.length }} talks by subscribing.</p>
+      } @else {
+        <p class="note">Nothing loaded yet.</p>
+      }
+    </div>
+  </div>
+
+  <!-- Interceptor log -->
+  <h2>Interceptor log</h2>
+  <p>Every request above went through <code>httpLogInterceptor</code>, registered once in <code>app.config.ts</code>. No component knows it exists.</p>
+  <div class="demo">
+    <ul class="log">
+      @for (e of log.entries(); track $index) {
+        <li><span class="url">GET {{ e.url }}</span><span [class.is-error]="e.status !== 200">{{ e.status }}</span><span>{{ e.ms }} ms</span></li>
+      } @empty {
+        <li class="note">No requests yet.</li>
+      }
+    </ul>
+    <p></p>
+    <button type="button" (click)="log.clear()">Clear log</button>
+  </div>
+
+  <h2>Observables vs Promises, in short</h2>
+  <ul>
+    <li><strong>Lazy:</strong> <code>http.get()</code> sends nothing until you subscribe. A <code>fetch()</code> starts immediately.</li>
+    <li><strong>Cancellable:</strong> unsubscribing aborts the request. That's what <code>httpResource</code> and <code>switchMap</code> do when the input changes, and it's why there are no race conditions when clicking fast.</li>
+    <li><strong>Many values:</strong> an Observable can emit many times (websockets, progress events). HTTP emits once and completes.</li>
+    <li><code>toSignal(observable$)</code> turns an Observable into a signal, and unsubscribes when the component is destroyed.</li>
+    <li>On a server-rendered site (lesson 12), data fetched on the server is embedded in the HTML and reused in the browser (the <strong>HTTP transfer cache</strong>), so it isn't fetched twice.</li>
+  </ul>
+</article>
