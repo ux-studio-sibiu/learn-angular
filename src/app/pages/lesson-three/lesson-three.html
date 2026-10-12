@@ -1,0 +1,74 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 15</p>
+  <h1>Three.js inside Angular</h1>
+  <p>No wrapper library here: Angular has no react-three-fiber equivalent in wide use, so you write the integration yourself. It's the same recipe as the canvas (lesson 09) and GSAP (lesson 14), plus one new concern: <strong>GPU memory</strong>, which JavaScript's garbage collector doesn't free for you.</p>
+
+  <table>
+    <thead><tr><th>Concern</th><th>Angular (<code>three-scene.ts</code>)</th><th>React (react-three-fiber)</th></tr></thead>
+    <tbody>
+      <tr><td>create renderer, scene, camera</td><td><code>afterNextRender</code> + <code>viewChild</code> canvas</td><td><code>&lt;Canvas&gt;</code></td></tr>
+      <tr><td>render loop</td><td><code>renderer.setAnimationLoop</code>, outside the zone</td><td><code>useFrame</code></td></tr>
+      <tr><td>props → 3D objects</td><td><code>input()</code> signals + <code>effect</code>s that update the material / geometry</td><td>JSX props on <code>&lt;mesh&gt;</code></td></tr>
+      <tr><td>cleanup</td><td><code>DestroyRef</code>: <code>dispose()</code> geometry, material, renderer</td><td>automatic on unmount</td></tr>
+      <tr><td>lazy load</td><td><code>&#64;defer (on viewport)</code></td><td><code>lazy()</code> / <code>next/dynamic</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>The scene</h2>
+  <p>Scroll it into view: the poster is replaced by the live scene, and only then is three.js (≈ 110 kB gzipped, its own <code>three-scene</code> chunk) downloaded. Move the pointer over it.</p>
+  <p class="note">Gotcha hit while building this: the page first imported a counter signal from <code>three-scene.ts</code>. That one static import pulled the whole file, and three.js with it, into the page chunk (548 kB), silently defeating <code>&#64;defer</code>. Moving the shared bits to <code>scene-stats.ts</code> fixed it. Always check <code>ng build</code> output.</p>
+  <div class="spacer">Scroll ↓ (the scene's code isn't loaded yet)</div>
+
+  @defer (on viewport; prefetch on idle) {
+    @if (mounted()) {
+      <app-three-scene [color]="color()" [detail]="detail()" [autoRotate]="autoRotate()" [leak]="leak()" (stats)="stats.set($event)" />
+    } @else {
+      <div class="unmounted">Scene unmounted</div>
+    }
+  } @placeholder {
+    <!-- Server-rendered and shown first: a static poster (also the reduced-data / no-WebGL fallback in a real build) -->
+    <div class="poster"><img ngSrc="images/hero-poster.svg" fill alt="Poster of the 3D scene" /></div>
+  } @loading (minimum 300ms) {
+    <div class="skeleton">Loading three.js…</div>
+  }
+
+  <div class="controls">
+    @for (c of colors; track c) {
+      <button type="button" class="swatch" [class.is-active]="color() === c" [style.--swatch]="c" (click)="color.set(c)" [attr.aria-label]="'Colour ' + c"></button>
+    }
+    <label class="inline">Detail <input #detailInput type="range" min="0" max="5" step="1" [value]="detail()" (input)="setDetail(detailInput.value)" /> {{ detail() }}</label>
+    <label class="inline"><input type="checkbox" [checked]="autoRotate()" (change)="autoRotate.set(!autoRotate())" /> auto-rotate</label>
+    <button type="button" (click)="mounted.set(!mounted())">{{ mounted() ? 'Unmount' : 'Mount' }} scene</button>
+    <label class="inline"><input type="checkbox" [checked]="leak()" (change)="leak.set(!leak())" /> forget dispose ✘</label>
+  </div>
+
+  <div class="stats">
+    @if (stats(); as s) {
+      <span>fps {{ s.fps }}</span><span>draw calls {{ s.calls }}</span><span>triangles {{ s.triangles }}</span><span>GPU geometries {{ s.geometries }}</span>
+    } @else {
+      <span>stats appear once the scene renders</span>
+    }
+    <span [class.is-leaking]="liveRenderers() > (mounted() ? 1 : 0)">live WebGL renderers: {{ liveRenderers() }}</span>
+  </div>
+
+  <h2>How it fits together</h2>
+  <ul>
+    <li><strong>Inputs drive the scene, not the other way round.</strong> Colour and detail are plain Angular inputs. Inside the component, <code>effect</code>s apply them to the existing material and geometry, so nothing is rebuilt. That's the react-three-fiber idea ("props in, objects updated") written by hand.</li>
+    <li><strong>The loop never touches Angular.</strong> <code>setAnimationLoop</code> and the pointer listener are registered outside the zone. Rotation and pointer tilt are plain variables. Stats leave the loop twice a second through an <code>output</code> (loop strategy B), and that's the only change detection the scene causes.</li>
+    <li><strong>It pauses itself.</strong> An IntersectionObserver stops the loop when the canvas is off-screen (scroll down and fps drops to nothing), and the browser already pauses rAF in background tabs.</li>
+    <li><strong>Reduced motion → render on demand.</strong> No loop at all; the scene renders once per change (a colour click, a pointer move). Toggle "reduce" in lesson 05 and come back.</li>
+    <li><strong>Pixel ratio is capped at 2.</strong> A 3× phone screen would otherwise render 9× the pixels of a 1× screen, for no visible gain.</li>
+  </ul>
+
+  <h2>Disposal: the part the garbage collector can't do</h2>
+  <p>Geometries, materials, textures and the WebGL context itself live on the GPU. Removing the component from the DOM frees the JavaScript objects, not the GPU memory. Tick <strong>forget dispose</strong> and mount/unmount repeatedly: "live WebGL renderers" keeps climbing. Around 16, the browser logs "Too many active WebGL contexts" and starts killing the oldest one, which on a real page might be your hero.</p>
+  <p class="note">Proper cleanup (in <code>DestroyRef.onDestroy</code>): stop the loop, disconnect observers, remove listeners, <code>geometry.dispose()</code>, <code>material.dispose()</code>, every <code>texture.dispose()</code>, <code>renderer.dispose()</code>, <code>renderer.forceContextLoss()</code>. Same for swaps: changing the detail level disposes the old geometry before using the new one.</p>
+
+  <h2>For a real 3D hero</h2>
+  <ul>
+    <li><strong>Assets:</strong> GLTF models compressed with Draco or Meshopt, textures as KTX2. Load them with <code>GLTFLoader</code> inside <code>afterNextRender</code>; show the poster until they're ready.</li>
+    <li><strong>Fallbacks:</strong> the <code>&#64;placeholder</code> poster doubles as the no-WebGL and reduced-data version, and it's what the server renders (lesson 12), so search engines and slow phones get a real image.</li>
+    <li><strong>Accessibility:</strong> the canvas has <code>role="img"</code> and a label; any information shown in 3D needs an HTML equivalent next to it.</li>
+    <li><strong>Next lesson:</strong> GSAP's ScrollTrigger drives this scene's camera and material while you scroll: the two libraries together.</li>
+  </ul>
+</article>
