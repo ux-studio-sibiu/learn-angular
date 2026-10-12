@@ -1,0 +1,92 @@
+<article class="nsc-lesson" [class.motion-reduced]="motion.reduced()">
+  <p class="eyebrow">Lesson 13</p>
+  <h1>Angular-native animation</h1>
+  <p>Before reaching for GSAP: most UI motion is CSS, triggered by Angular bindings. Angular adds two things CSS can't do alone: animating elements <em>out</em> before they're removed, and morphing between two DOM states with View Transitions.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React</th><th>jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>[class.is-open]</code> + a CSS transition</td><td><code>className</code> + a CSS transition</td><td><code>.toggleClass()</code></td></tr>
+      <tr><td><code>animate.enter="cls"</code></td><td>a mount animation (CSS, or Framer Motion <code>initial</code>)</td><td><code>.fadeIn()</code> after <code>.append()</code></td></tr>
+      <tr><td><code>animate.leave="cls"</code> / <code>(animate.leave)="fn($event)"</code></td><td>Framer Motion <code>&lt;AnimatePresence&gt;</code> + <code>exit</code></td><td><code>.fadeOut(() =&gt; $el.remove())</code></td></tr>
+      <tr><td>View Transitions (<code>withViewTransitions()</code>, <code>startViewTransition</code>)</td><td><code>&lt;ViewTransition&gt;</code> (experimental), Framer Motion <code>layout</code></td><td>manual FLIP</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Every demo reads <code>MotionPreference</code> (lesson 05). Set it to "reduce" there and everything here turns instant.</p>
+
+  <!-- 1. CSS -->
+  <h2>1. CSS first: bindings toggle classes, CSS animates</h2>
+  <div class="demo">
+    <button type="button" class="lift" (click)="open.set(!open())" [attr.aria-expanded]="open()">
+      Details <span class="chevron" [class.is-open]="open()" aria-hidden="true">▾</span>
+    </button>
+    <div class="expander" [class.is-open]="open()">
+      <div class="inner">
+        <p>This panel animates its height with <code>grid-template-rows: 0fr → 1fr</code>, no JavaScript measuring. The element is always in the DOM (it's a class, not an <code>&#64;if</code>), so CSS can transition both ways.</p>
+      </div>
+    </div>
+  </div>
+  <p class="note">This covers hovers, toggles, accordions and micro-interactions: Angular only flips the class. The limit: with <code>&#64;if</code>, the element is <em>removed</em> immediately, so there's nothing left to animate out.</p>
+
+  <!-- 2. enter / leave -->
+  <h2>2. animate.enter &amp; animate.leave</h2>
+  <p><code>animate.enter="toast-in"</code> adds that class when the element is created. <code>animate.leave="toast-out"</code> adds the class when it's about to be removed, and <strong>Angular waits for the CSS animation to finish</strong> before removing it from the DOM.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="addToast()">Add notification</button>
+      <button type="button" (click)="showPanel.set(!showPanel())">{{ showPanel() ? 'Remove' : 'Add' }} panel (JS exit)</button>
+    </div>
+    <div class="toasts">
+      @for (t of toasts(); track t.id) {
+        <div class="toast" animate.enter="toast-in" animate.leave="toast-out">
+          <span>{{ t.text }}</span>
+          <button type="button" (click)="dismiss(t.id)" aria-label="Dismiss">✕</button>
+        </div>
+      }
+    </div>
+    @if (showPanel()) {
+      <!-- The function form: Angular hands us the element and waits until we call animationComplete() -->
+      <div class="panel" animate.enter="panel-in" (animate.leave)="flyOut($event)">
+        This panel leaves through a JavaScript animation (Web Animations API). Lesson 14 plugs GSAP into this same hook.
+      </div>
+    }
+  </div>
+  <ul class="note">
+    <li>Works with <code>&#64;if</code>, <code>&#64;for</code>, <code>&#64;switch</code> and routing, anywhere Angular adds or removes elements. That's the <code>AnimatePresence</code> problem, solved in the template.</li>
+    <li>The class form is enough most of the time. The function form <code>(animate.leave)="fn($event)"</code> is the bridge to JS libraries: animate <code>$event.target</code>, then call <code>$event.animationComplete()</code>.</li>
+    <li>On the server they do nothing, and with reduced motion (CSS <code>animation: none</code>) Angular sees no animation and removes the element straight away.</li>
+  </ul>
+
+  <!-- 3. View Transitions -->
+  <h2>3. View Transitions: morph between two layouts</h2>
+  <p>Each tile has a <code>view-transition-name</code>. When the layout changes inside <code>document.startViewTransition()</code>, the browser photographs the old and new positions and animates each tile between them. Reordering and layout changes for free, with no measuring code.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="toggleLayout()">Switch to {{ layout() === 'grid' ? 'list' : 'grid' }}</button>
+      <button type="button" (click)="shuffle()">Shuffle</button>
+    </div>
+    <ul class="tiles" [class.list]="layout() === 'list'">
+      @for (t of tiles(); track t.id) {
+        <li [style.view-transition-name]="'tile-' + t.id">{{ t.title }}</li>
+      }
+    </ul>
+  </div>
+  <ul class="note">
+    <li>The one Angular-specific detail: signals update the DOM a moment later, but the browser needs the change <em>inside</em> the callback. So the component calls <code>cdr.detectChanges()</code> there to flush it immediately.</li>
+    <li><strong>Route changes</strong> already use this: <code>withViewTransitions()</code> (lesson 06) wraps every navigation, and <code>styles.scss</code> now gives it a slide-and-fade (<code>::view-transition-old/new(root)</code>). Give an element the same <code>view-transition-name</code> on two pages and it morphs across the navigation (a list thumbnail growing into a detail hero).</li>
+    <li>Browser support is good in Chromium and Safari; elsewhere the update just happens without animation.</li>
+  </ul>
+
+  <h2>The old way: &#64;angular/animations</h2>
+  <p>You'll see <code>trigger()</code>, <code>state()</code>, <code>transition('void =&gt; *', [animate(300)])</code> and <code>[&#64;fade]</code> bindings in older code. That package is <strong>deprecated since v20.2</strong> in favour of <code>animate.enter/leave</code> + CSS, and it's not installed here. Knowing it exists matters when reading WEF's existing Angular code; new code shouldn't use it.</p>
+
+  <h2>Which tool, when</h2>
+  <ol>
+    <li><strong>CSS + class bindings:</strong> hovers, toggles, accordions, micro-interactions.</li>
+    <li><strong>animate.enter / leave:</strong> things appearing and disappearing (toasts, modals, list items, route content).</li>
+    <li><strong>View Transitions:</strong> layout changes, reordering, page-to-page continuity.</li>
+    <li><strong>GSAP</strong> (lesson 14): choreographed timelines, scroll-driven storytelling, precise sequencing.</li>
+    <li><strong>Three.js</strong> (lesson 15): only when it's genuinely 3D.</li>
+  </ol>
+  <p class="note">Each step down costs more JavaScript, more code and more accessibility work. "Use the cheapest tool that achieves the creative intent" is the answer the WEF job description is looking for.</p>
+</article>

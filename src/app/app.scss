@@ -4,6 +4,7 @@
 .site-header {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 16px 24px; border-bottom: 1px solid var(--line);
+  view-transition-name: site-header; // lesson 13: excluded from the page slide during route transitions
 
   .brand { font-weight: 700; color: var(--fg); text-decoration: none; }
 }
