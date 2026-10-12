@@ -1,0 +1,52 @@
+{
+  "_id": "page.future-of-jobs",
+  "slug": "future-of-jobs",
+  "title": "The future of jobs",
+  "description": "A second sample page built from the same blocks in a different order, with different content.",
+  "blocks": [
+    {
+      "_type": "hero",
+      "_key": "j1",
+      "kicker": "Report · Sample content",
+      "heading": "Which skills rise, which ones fade",
+      "intro": "Same components as the other page, different content and a different order: that's the point of a page builder.",
+      "image": "images/city-pattern.svg"
+    },
+    {
+      "_type": "quote",
+      "_key": "j2",
+      "text": "The half-life of a skill is now shorter than a typical career stage.",
+      "author": "Sample economist"
+    },
+    {
+      "_type": "chart",
+      "_key": "j3",
+      "title": "Growth in demand by skill (sample %)",
+      "unit": "%",
+      "bars": [
+        { "label": "AI & data", "value": 88 },
+        { "label": "Green skills", "value": 71 },
+        { "label": "Leadership", "value": 49 },
+        { "label": "Manual", "value": 18 }
+      ]
+    },
+    {
+      "_type": "richText",
+      "_key": "j4",
+      "paragraphs": [
+        [
+          { "text": "Notice the chart came " },
+          { "text": "before", "mark": "em" },
+          { "text": " the text here. An editor changed the order in the CMS; the Angular code didn't change at all." }
+        ]
+      ]
+    },
+    {
+      "_type": "cta",
+      "_key": "j5",
+      "heading": "Back to the other sample page",
+      "label": "Davos 2027",
+      "href": "/lessons/cms?page=davos-2027"
+    }
+  ]
+}

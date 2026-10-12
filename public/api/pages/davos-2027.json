@@ -1,0 +1,75 @@
+{
+  "_id": "page.davos-2027",
+  "slug": "davos-2027",
+  "title": "Davos 2027: Rebuilding trust",
+  "description": "Sample editorial page assembled from CMS blocks: hero, rich text, stats, chart, quote and call to action.",
+  "blocks": [
+    {
+      "_type": "hero",
+      "_key": "b1",
+      "kicker": "Annual Meeting · Sample content",
+      "heading": "Rebuilding trust in a fragmented world",
+      "intro": "Five days, one question: how do institutions earn back the confidence they've lost?",
+      "image": "images/hero-poster.svg"
+    },
+    {
+      "_type": "richText",
+      "_key": "b2",
+      "paragraphs": [
+        [
+          { "text": "This page isn't written in a template. It's a list of " },
+          { "text": "blocks", "mark": "strong" },
+          { "text": " coming from a CMS, and Angular maps each one to a component. Editors reorder, add or remove blocks; " },
+          { "text": "no developer is involved", "mark": "em" },
+          { "text": "." }
+        ],
+        [
+          { "text": "Read how the mapping works in the " },
+          { "text": "explanation below the preview", "href": "#how-it-works" },
+          { "text": "." }
+        ]
+      ]
+    },
+    {
+      "_type": "stats",
+      "_key": "b3",
+      "items": [
+        { "value": "2,800", "label": "participants" },
+        { "value": "130", "label": "countries" },
+        { "value": "400", "label": "sessions" }
+      ],
+      "source": "Sample figures for this lesson"
+    },
+    {
+      "_type": "chart",
+      "_key": "b4",
+      "title": "Trust in institutions (sample index)",
+      "unit": "pts",
+      "bars": [
+        { "label": "Business", "value": 62 },
+        { "label": "NGOs", "value": 58 },
+        { "label": "Government", "value": 41 },
+        { "label": "Media", "value": 37 }
+      ]
+    },
+    {
+      "_type": "quote",
+      "_key": "b5",
+      "text": "Trust is built in drops and lost in buckets.",
+      "author": "Sample speaker",
+      "role": "Panel on institutions"
+    },
+    {
+      "_type": "video",
+      "_key": "b6",
+      "url": "https://example.com/opening.mp4"
+    },
+    {
+      "_type": "cta",
+      "_key": "b7",
+      "heading": "Explore the full programme",
+      "label": "See the talks",
+      "href": "/lessons/routing"
+    }
+  ]
+}

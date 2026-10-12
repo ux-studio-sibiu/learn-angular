@@ -12,7 +12,7 @@ import { TALKS } from './talks';
         <p class="speaker">{{ t.speaker }}</p>
         <p>{{ t.summary }}</p>
       } @else {
-        <h3>Talk “{{ id() }}” not found</h3>
+        <h3>Talk &ldquo;{{ id() }}&rdquo; not found</h3>
       }
       <p class="links">
         <a routerLink="/lessons/routing">← All talks</a>

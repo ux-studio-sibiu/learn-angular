@@ -1,0 +1,18 @@
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 16px; }
+
+.tab {
+  padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--fg); text-decoration: none;
+
+  &.is-active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+}
+
+label.inline { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+
+.preview { padding: 20px; border: 1px solid var(--line); border-radius: 12px; }
+
+.status { color: var(--muted); }
+.status.is-error { color: var(--accent); }
+
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--muted); }
+pre { max-height: 320px; }

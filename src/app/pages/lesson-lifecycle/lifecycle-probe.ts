@@ -12,7 +12,7 @@ export class LifecycleLog {
 
 @Component({
   selector: 'app-lifecycle-probe',
-  template: `<p class="nsc-lifecycle-probe">I'm probe “{{ label() }}”</p>`,
+  template: `<p class="nsc-lifecycle-probe">I'm probe &ldquo;{{ label() }}&rdquo;</p>`,
   styles: `.nsc-lifecycle-probe { margin: 0; padding: 8px 12px; border: 1px dashed var(--accent); border-radius: 6px; }`
 })
 export class LifecycleProbe implements OnChanges, OnInit, AfterViewInit, OnDestroy {

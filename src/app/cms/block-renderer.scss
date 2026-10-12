@@ -1,0 +1,17 @@
+:host { display: grid; gap: 28px; }
+
+.block { position: relative; }
+
+.chart-placeholder { display: grid; place-items: center; min-height: 200px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+
+.unknown { margin: 0; padding: 10px 14px; border: 1px dashed var(--accent); border-radius: 6px; color: var(--accent); font-size: 0.9rem; }
+
+// Editor overlay: outline every block and label it with its CMS type
+:host(.show-outlines) .block {
+  outline: 1px dashed var(--accent); outline-offset: 6px;
+
+  &::before {
+    content: attr(data-block); position: absolute; top: -18px; left: 0; z-index: 1; padding: 0 6px; border-radius: 3px;
+    background: var(--accent); color: #fff; font: 600 0.7rem/1.5 ui-monospace, Consolas, monospace;
+  }
+}

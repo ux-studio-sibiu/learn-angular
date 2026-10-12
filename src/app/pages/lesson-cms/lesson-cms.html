@@ -1,0 +1,73 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 17</p>
+  <h1>CMS blocks: a page builder</h1>
+  <p>Editorial sites (WEF's included) aren't hand-written pages. Editors compose pages in a CMS from <strong>blocks</strong> (hero, text, stats, chart, quote, call to action) and the frontend maps each block type to a component. Same idea as a Sanity page builder with <code>&lt;PortableText components=&#123;…&#125;&gt;</code> in Next.js.</p>
+
+  <!-- The live page builder -->
+  <h2>The rendered page</h2>
+  <div class="toolbar">
+    @for (d of documents; track d.slug) {
+      <a class="tab" routerLink="." [queryParams]="{ page: d.slug }" [class.is-active]="slug() === d.slug">{{ d.label }}</a>
+    }
+    <label class="inline"><input type="checkbox" [checked]="outlines()" (change)="outlines.set(!outlines())" /> show block outlines</label>
+  </div>
+
+  <div class="preview">
+    @if (doc.error()) {
+      <p class="status is-error">Couldn't load the page &ldquo;{{ slug() }}&rdquo;.</p>
+    } @else if (doc.hasValue()) {
+      <app-block-renderer [blocks]="doc.value().blocks" [outlines]="outlines()" />
+    } @else {
+      <p class="status">Loading page…</p>
+    }
+  </div>
+
+  @if (doc.hasValue()) {
+    <details>
+      <summary>The CMS document behind this page (JSON)</summary>
+      <pre>{{ doc.value() | json }}</pre>
+    </details>
+  }
+
+  <!-- Explanation -->
+  <h2 id="how-it-works">How it works</h2>
+  <ol>
+    <li><strong>A content model</strong> (<code>cms/blocks.ts</code>): one TypeScript type per block, joined in a union on <code>_type</code>. In a Sanity project, <code>sanity typegen</code> generates exactly this from the schema.</li>
+    <li><strong>One component per block</strong> (<code>cms/*-block.ts</code>): each takes a single typed <code>block</code> input and knows nothing about the CMS, pages or other blocks. That's the design-system part: small, composable, reusable.</li>
+    <li><strong>A renderer</strong> (<code>cms/block-renderer.ts</code>): <code>&#64;for</code> over the blocks, <code>track block._key</code>, and a <code>&#64;switch (block._type)</code> that picks the component. Inside each <code>&#64;case</code>, Angular narrows the type, so passing a <code>StatsBlock</code> to the hero component is a compile error.</li>
+    <li><strong>A route that loads a document</strong>: <code>?page=</code> → <code>httpResource</code> → renderer. Title and meta description come from the document, on the server too.</li>
+  </ol>
+
+  <h2>Details that matter in production</h2>
+  <ul>
+    <li><strong>Unknown blocks:</strong> the Davos document contains a <code>video</code> block this frontend has no component for (the CMS schema often moves faster than the code). <code>&#64;default</code> shows a warning in development and renders nothing in production, instead of crashing the page.</li>
+    <li><strong>Heavy blocks are deferred individually:</strong> the chart sits in <code>&#64;defer (on viewport)</code> inside its <code>&#64;case</code>, so a page without charts never downloads chart code, and a page with one loads it on scroll. A 3D or data-viz block would do the same.</li>
+    <li><strong>Rich text without innerHTML:</strong> text arrives as structured spans (≈ Portable Text) and becomes real <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code> and link elements. Nothing from the CMS is parsed as HTML, so there's nothing to sanitise and no injection risk. (If you must render CMS HTML, Angular's <code>[innerHTML]</code> sanitises it, but structured content is better.)</li>
+    <li><strong>Links:</strong> internal CMS links become <code>routerLink</code>s (no full reload); external ones stay plain links.</li>
+    <li><strong>Only the first hero gets <code>priority</code></strong>: it's the LCP image (lesson 11). <code>$first</code> from the loop decides.</li>
+    <li><strong>Editor tooling:</strong> "show block outlines" labels each block with its type, a tiny version of Sanity's Presentation tool / visual editing overlay.</li>
+  </ul>
+
+  <h2>The alternative: a component registry</h2>
+  <p>Instead of <code>&#64;switch</code>, some codebases keep a map from type to component and render it dynamically:</p>
+  <pre><code>const BLOCKS: Record&lt;string, Type&lt;unknown&gt;&gt; = &#123; hero: HeroBlockComponent, stats: StatsBlockComponent, … &#125;;
+
+&lt;ng-container *ngComponentOutlet="BLOCKS[block._type]; inputs: &#123; block &#125;" /&gt;</code></pre>
+  <table>
+    <thead><tr><th></th><th><code>&#64;switch</code> (used here)</th><th>Registry + <code>NgComponentOutlet</code></th></tr></thead>
+    <tbody>
+      <tr><td>Type safety</td><td>full: each case is narrowed and checked</td><td>none: inputs are an untyped object</td></tr>
+      <tr><td>Per-block <code>&#64;defer</code></td><td>yes, in the template</td><td>by hand (lazy <code>import()</code> per entry)</td></tr>
+      <tr><td>Adding a block</td><td>add a <code>&#64;case</code></td><td>add a map entry (can even come from plugins)</td></tr>
+      <tr><td>Fits when</td><td>one team owns the blocks (most sites)</td><td>blocks are registered from many packages / micro-frontends</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Beyond this demo</h2>
+  <ul>
+    <li><strong>Real CMS:</strong> replace the JSON files with the Sanity client / a GROQ query in a service. The renderer doesn't change.</li>
+    <li><strong>Caching &amp; revalidation:</strong> the Express server (<code>src/server.ts</code>) is where a CMS webhook endpoint would clear a cache or re-prerender a page when an editor publishes, like your casedeschise.ro setup.</li>
+    <li><strong>Preview / drafts:</strong> a route that loads draft documents with a token, rendered with <code>RenderMode.Server</code> so editors see changes immediately.</li>
+    <li><strong>Animation:</strong> blocks can opt into motion with the lesson 14–16 helpers (<code>useGsap</code>, enter/leave hooks), so a "scroll story" is just another block type.</li>
+  </ul>
+</article>
