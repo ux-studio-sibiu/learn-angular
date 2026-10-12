@@ -1,0 +1,32 @@
+.hero {
+  position: relative; padding: 32px 24px; border-radius: 12px; background: #1d1d1b; color: #fafaf7; overflow: hidden;
+
+  .hero-title { margin: 0; max-width: 16ch; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.05; }
+  .hero-sub { margin: 12px 0 0; max-width: 40ch; color: #b9b9b2; }
+}
+
+// SplitText wraps each character in a div; overflow on the word hides the slide-up
+:host ::ng-deep .hero-title > div { overflow: hidden; }
+
+.shapes { position: absolute; right: 24px; bottom: 24px; display: flex; gap: 10px; }
+.shape { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); }
+.shape:nth-child(even) { border-radius: 50%; background: #fafaf7; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.scrubber { flex: 1; min-width: 160px; accent-color: var(--accent); }
+.progress-out { min-width: 4ch; font-family: ui-monospace, Consolas, monospace; }
+
+.meter {
+  margin-top: 10px; padding: 6px 12px; border-radius: 6px; background: var(--code-bg);
+  font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem;
+}
+
+.briefings { margin: 12px 0 0; padding: 0; list-style: none; overflow: hidden; }
+.briefings li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 8px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px;
+}
+
+.button-wrong { border-style: dashed; color: var(--muted); }
+
+.scroll-hint { display: grid; place-items: center; min-height: 40vh; color: var(--muted); }

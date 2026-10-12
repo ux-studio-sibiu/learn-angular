@@ -1,0 +1,75 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 14</p>
+  <h1>GSAP inside Angular</h1>
+  <p>GSAP is where choreography lives: timelines, staggers, scroll-driven scenes. Integrating it is the recipe from lessons 09–12, packed into one helper, <code>useGsap()</code> in <code>services/gsap.ts</code>: start in the browser after render, outside the zone, inside a <code>gsap.context()</code>, reverted on destroy.</p>
+
+  <table>
+    <thead><tr><th>Angular (<code>useGsap</code>)</th><th>React (<code>&#64;gsap/react</code>)</th><th>jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>afterNextRender</code> + <code>gsap.context(fn, host)</code></td><td><code>useGSAP(fn, &#123; scope &#125;)</code></td><td><code>$(fn)</code> + GSAP on <code>$('.x')</code></td></tr>
+      <tr><td><code>ctx.revert()</code> in the effect cleanup</td><td>automatic in <code>useGSAP</code></td><td><code>tl.kill()</code> by hand (usually forgotten)</td></tr>
+      <tr><td><code>zone.runOutsideAngular</code></td><td>not needed (no zone)</td><td>not needed</td></tr>
+      <tr><td>selectors scoped to the component host</td><td>the <code>scope</code> ref</td><td>global selectors</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. Timeline -->
+  <h2>1. A timeline with SplitText</h2>
+  <div class="hero">
+    <h2 class="hero-title">Shaping the future, one frame at a time</h2>
+    <p class="hero-sub">A timeline: characters rise in with a stagger, then the subtitle, then the shapes pop from the centre.</p>
+    <div class="shapes" aria-hidden="true"><span class="shape"></span><span class="shape"></span><span class="shape"></span><span class="shape"></span><span class="shape"></span></div>
+  </div>
+  <div class="controls">
+    <button type="button" (click)="play()">Play</button>
+    <button type="button" (click)="reverse()">Reverse</button>
+    <button type="button" (click)="restart()">Restart</button>
+    <button type="button" class="button-wrong" (click)="restartInsideZone()">Restart inside the zone ✘</button>
+    <input #scrubber class="scrubber" type="range" min="0" max="1" step="0.001" value="0" (input)="scrub(scrubber.value)" aria-label="Timeline progress" />
+    <span #progressOut class="progress-out">0%</span>
+  </div>
+  <div #meter class="meter">… render passes per second</div>
+  <ul class="note">
+    <li>The timeline is built once in <code>useGsap()</code>. The buttons only call <code>play()</code>, <code>reverse()</code>, <code>progress()</code> on it, the way you'd keep a timeline in a ref in React.</li>
+    <li>The progress readout and slider are updated in <code>onUpdate</code> by writing to the DOM directly (loop strategy A). A signal there would mean 60 state updates per second.</li>
+    <li><strong>The pitfall:</strong> clicks run inside Angular's zone. GSAP's ticker sleeps when nothing is animating; a tween started from a click wakes it <em>inside</em> the zone, and every frame triggers change detection. Compare the meter after "Restart" and after "Restart inside the zone". The fix is wrapping handler calls in <code>runOutsideAngular</code> (<code>useOutsideZone()</code>), or going zoneless.</li>
+    <li><code>SplitText</code> injects its own <code>&lt;div&gt;</code>s, which don't get Angular's scoped style attributes, so they're styled with <code>::ng-deep</code>. A rare legitimate use.</li>
+  </ul>
+
+  <!-- 2. ScrollTrigger -->
+  <h2>2. ScrollTrigger: a pinned, scrubbed scroll story</h2>
+  <p>Scroll down. The stage pins while 1800 px of scrolling drives a timeline. Per-frame progress goes into a CSS variable (the bar at the bottom); only the <strong>chapter number</strong> is a signal, so this OnPush component re-renders 3 times per scroll, not 60 times per second.</p>
+  <div class="scroll-hint">Scroll ↓</div>
+  <app-scroll-story />
+  <ul class="note">
+    <li><code>ScrollTrigger</code> is created inside the same <code>gsap.context()</code>, so navigating away kills it and removes the pin spacer. A ScrollTrigger left behind would keep measuring a page that no longer exists.</li>
+    <li>Plugins are registered once, in the browser (<code>gsap.registerPlugin</code> in <code>afterNextRender</code>). On the server the component simply renders its HTML.</li>
+    <li>With reduced motion, <code>useGsap</code> re-runs setup with <code>reduced: true</code>: no pin, no scrub, all chapters visible as a plain list.</li>
+  </ul>
+
+  <!-- 3. GSAP in enter/leave -->
+  <h2>3. GSAP in Angular's enter/leave hooks</h2>
+  <p>Lesson 13's function form, now with GSAP: <code>(animate.enter)="gsapEnter($event)"</code> and <code>(animate.leave)="gsapLeave($event)"</code>. Angular keeps the leaving item in the DOM until GSAP's <code>onComplete</code> calls <code>animationComplete()</code>.</p>
+  <div class="demo">
+    <button type="button" (click)="add()">Add briefing</button>
+    <ul class="briefings">
+      @for (item of items(); track item.id) {
+        <li (animate.enter)="gsapEnter($event)" (animate.leave)="gsapLeave($event)">
+          <span>{{ item.title }}</span>
+          <button type="button" (click)="remove(item.id)" aria-label="Remove">✕</button>
+        </li>
+      }
+    </ul>
+  </div>
+  <p class="note">This is the cleanest way to put GSAP on things Angular creates and destroys (list items, modals, route content): Angular owns <em>when</em>, GSAP owns <em>how</em>.</p>
+
+  <h2>The rules, in one list</h2>
+  <ol>
+    <li>Create animations in <code>afterNextRender</code> (browser only, DOM ready).</li>
+    <li>Run them outside the zone, including tweens started from event handlers.</li>
+    <li>Scope them with <code>gsap.context(fn, hostElement)</code> and <code>revert()</code> on destroy.</li>
+    <li>Per-frame values go to the DOM / CSS variables; only meaningful changes become signals.</li>
+    <li>Read reduced motion from one place and rebuild when it changes.</li>
+    <li>Let Angular decide when elements exist (<code>&#64;if</code>, <code>&#64;for</code>), and use the enter/leave hooks for GSAP on those.</li>
+  </ol>
+</article>
