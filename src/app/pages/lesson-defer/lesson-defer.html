@@ -1,0 +1,85 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 11</p>
+  <h1>&#64;defer &amp; performance</h1>
+  <p><code>&#64;defer</code> wraps part of a template so its components (and everything they import, Three.js included) are downloaded only when a trigger fires. The compiler does the code splitting. It's the tool for heavy 3D heroes and data-viz blocks on long editorial pages.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React / Next.js</th><th>jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>&#64;defer &#123; &lt;app-scene /&gt; &#125;</code></td><td><code>React.lazy</code> + <code>&lt;Suspense&gt;</code>, <code>next/dynamic</code></td><td><code>$.getScript()</code> on demand</td></tr>
+      <tr><td><code>on viewport</code></td><td>a <code>useInView</code> / IntersectionObserver hook</td><td>a lazy-load plugin</td></tr>
+      <tr><td><code>on interaction</code>, <code>on hover</code>, <code>when cond</code></td><td>state + conditional <code>lazy()</code></td><td>load in a click handler</td></tr>
+      <tr><td><code>&#64;placeholder</code> / <code>&#64;loading</code> / <code>&#64;error</code></td><td>Suspense <code>fallback</code> / an error boundary</td><td>—</td></tr>
+      <tr><td><code>&lt;img ngSrc&gt;</code> (<code>NgOptimizedImage</code>)</td><td><code>next/image</code></td><td>a lazy-load plugin + manual srcset</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. on interaction: the poster pattern -->
+  <h2>1. on interaction: poster first, scene on click</h2>
+  <p>The WEF-style hero pattern. A lightweight poster image renders immediately; the "scene" (the bouncing canvas standing in for Three.js) is only fetched when you click. <code>prefetch on idle</code> downloads the chunk while the browser is idle, so the click feels instant.</p>
+  <div class="demo">
+    @defer (on interaction; prefetch on idle) {
+      <app-bouncing-canvas />
+    } @placeholder {
+      <!-- Only the placeholder exists until the trigger fires. Clicking it IS the trigger. -->
+      <button type="button" class="poster" aria-label="Start the interactive scene">
+        <img ngSrc="images/hero-poster.svg" width="1200" height="400" priority alt="" />
+        <span class="play">▶ Start the interactive scene</span>
+      </button>
+    } @loading (after 100ms; minimum 400ms) {
+      <div class="skeleton">Loading scene…</div>
+    }
+  </div>
+  <p class="note"><code>&#64;loading (after 100ms; minimum 400ms)</code>: don't flash a spinner for fast loads, and if you do show it, keep it long enough not to flicker. Open DevTools → Network before clicking to see the chunk arrive (it may already be there thanks to the prefetch).</p>
+
+  <!-- 2. on viewport -->
+  <h2>2. on viewport: load when it scrolls into view</h2>
+  <p>The chart below is a separate chunk too. Its code isn't requested until the placeholder enters the viewport. Scroll down.</p>
+  <div class="spacer">Keep scrolling ↓ (this space is here so the chart starts off-screen)</div>
+  <div class="demo">
+    @defer (on viewport) {
+      <app-attendance-chart />
+    } @placeholder (minimum 300ms) {
+      <div class="skeleton">Chart placeholder: loads when visible</div>
+    } @loading (minimum 400ms) {
+      <div class="skeleton">Loading chart…</div>
+    }
+  </div>
+  <p class="note"><code>on viewport</code> needs a placeholder: that's the element Angular watches with an IntersectionObserver. Give it the chart's real height so nothing jumps when it swaps (layout shift, the CLS in Core Web Vitals).</p>
+
+  <!-- 3. when -->
+  <h2>3. when: load on a condition</h2>
+  <div class="demo">
+    <button type="button" (click)="showExtras.set(true)" [disabled]="showExtras()">Show related talks</button>
+    @defer (when showExtras()) {
+      <div class="extras">
+        <app-card><h3 card-title>Cities of 2050</h3><p>Loaded the moment the signal became true.</p></app-card>
+        <app-card><h3 card-title>Global health</h3><p>The card component came in its own chunk.</p></app-card>
+      </div>
+    }
+  </div>
+  <p class="note">Other triggers: <code>on idle</code> (the default), <code>on immediate</code>, <code>on hover</code>, <code>on timer(2s)</code>, and you can combine them: <code>on viewport; on timer(5s)</code>. Once loaded, a block never goes back to its placeholder, even if the condition turns false again (use <code>&#64;if</code> for that).</p>
+
+  <!-- 4. NgOptimizedImage -->
+  <h2>4. NgOptimizedImage: next/image for Angular</h2>
+  <p>Use <code>ngSrc</code> instead of <code>src</code>. It's lazy by default, requires dimensions (no layout shift), and warns in dev mode about common mistakes, like a large image without <code>priority</code> at the top of the page.</p>
+  <div class="demo">
+    <div class="frame">
+      <!-- fill: no width/height, the image covers its positioned parent (≈ next/image fill) -->
+      <img ngSrc="images/city-pattern.svg" fill alt="Stylised city skyline" />
+    </div>
+  </div>
+  <ul class="note">
+    <li><code>width</code> + <code>height</code> (or <code>fill</code>) are required: the browser reserves the space before the image loads.</li>
+    <li><code>priority</code> marks the LCP image: eager, high fetch priority, and a preload hint on the server-rendered page. Everything else is <code>loading="lazy"</code>.</li>
+    <li>With an image loader (built-ins for Imgix, Cloudinary, ImageKit, Netlify, or a custom one, e.g. building Sanity image URLs with <code>?w=</code>), it also generates the <code>srcset</code>, so phones download small files. This demo uses local SVGs, so there's nothing to resize.</li>
+  </ul>
+
+  <h2>Rules &amp; gotchas</h2>
+  <ul>
+    <li>Deferred components must be <strong>standalone</strong> and referenced <strong>only inside &#64;defer</strong> in that file. One stray reference (a <code>viewChild</code> type, a second use outside the block) silently puts it back in the main chunk.</li>
+    <li>Run <code>ng build</code>: each block shows up as its own lazy chunk (named after the component). That's how you check it worked.</li>
+    <li>With SSR (lesson 12), <code>&#64;defer</code> renders the <em>placeholder</em> on the server. Incremental hydration (<code>hydrate on viewport</code>) goes further: render the real content on the server, but only load its JS when needed.</li>
+    <li>Defer is one tool among several: lazy routes (lesson 06), <code>OnPush</code> + signals, running loops outside the zone (lesson 10), bundle budgets in <code>angular.json</code>.</li>
+  </ul>
+</article>

@@ -18,5 +18,6 @@ export const routes: Routes = [
   { path: 'lessons/forms', loadComponent: () => import('./pages/lesson-forms/lesson-forms').then(m => m.LessonForms), canDeactivate: [unsavedChangesGuard], title: '08 Forms' },
   { path: 'lessons/lifecycle', loadComponent: () => import('./pages/lesson-lifecycle/lesson-lifecycle').then(m => m.LessonLifecycle), title: '09 Lifecycle & DOM' },
   { path: 'lessons/change-detection', loadComponent: () => import('./pages/lesson-change-detection/lesson-change-detection').then(m => m.LessonChangeDetection), title: '10 Change detection' },
+  { path: 'lessons/defer', loadComponent: () => import('./pages/lesson-defer/lesson-defer').then(m => m.LessonDefer), title: '11 @defer & performance' },
   { path: '**', redirectTo: '' }
 ];
