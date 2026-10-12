@@ -23,5 +23,6 @@ export const routes: Routes = [
   { path: 'lessons/animation', loadComponent: () => import('./pages/lesson-animation/lesson-animation').then(m => m.LessonAnimation), title: '13 Animation' },
   { path: 'lessons/gsap', loadComponent: () => import('./pages/lesson-gsap/lesson-gsap').then(m => m.LessonGsap), title: '14 GSAP' },
   { path: 'lessons/three', loadComponent: () => import('./pages/lesson-three/lesson-three').then(m => m.LessonThree), title: '15 Three.js' },
+  { path: 'lessons/finale', loadComponent: () => import('./pages/lesson-finale/lesson-finale').then(m => m.LessonFinale), title: '16 GSAP + Three.js' },
   { path: '**', redirectTo: '' }
 ];

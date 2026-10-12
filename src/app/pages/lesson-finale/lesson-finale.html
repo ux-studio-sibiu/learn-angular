@@ -1,0 +1,70 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 16 · finale</p>
+  <h1>GSAP + Three.js, scroll-driven</h1>
+  <p>The WEF-style immersive story: a pinned stage, a 3D scene that changes as you scroll, and captions that follow the chapters. Every earlier lesson shows up somewhere in it. The point isn't the effect; it's that Angular, GSAP and Three.js each own one job and never step on each other.</p>
+
+  <div #meter class="meter">… Angular render passes / second</div>
+
+  <h2>Who owns what</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Owns</th><th>Talks to the others through</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Angular</strong></td><td>markup, captions (server-rendered), chapter state, lifecycle, lazy loading</td><td>one <code>chapter</code> signal; <code>afterNextRender</code> / <code>DestroyRef</code></td></tr>
+      <tr><td><strong>GSAP</strong></td><td>time and scroll: a scrubbed, pinned ScrollTrigger timeline</td><td>tweens a plain <code>params</code> object; writes <code>--progress</code> to CSS</td></tr>
+      <tr><td><strong>Three.js</strong></td><td>pixels</td><td>one <code>render()</code> that reads <code>params</code>, called from <code>gsap.ticker</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="flow">scroll ─▶ ScrollTrigger (outside the zone)
+           ├─▶ timeline.progress ─▶ tweens params.rotY / camZ / color …   (plain object, 60×/s)
+           │                                   └─▶ gsap.ticker ─▶ render() ─▶ WebGL canvas
+           ├─▶ --progress CSS variable ─▶ progress bar                    (DOM, 60×/s)
+           └─▶ chapter changed? ─▶ chapter.set(i) ─▶ OnPush captions      (signal, 3× per scroll)</div>
+
+  <p>Keep an eye on the meter in the corner while you scroll: thousands of frames of 3D, and Angular renders only when the chapter changes.</p>
+
+  <div class="spacer">Scroll ↓ to load the scene</div>
+
+  @defer (on viewport; prefetch on idle) {
+    <app-scroll-scene />
+  } @placeholder {
+    <div class="poster"><img ngSrc="images/hero-poster.svg" fill alt="Poster of the scroll story" /></div>
+  } @loading (minimum 300ms) {
+    <div class="skeleton">Loading the story…</div>
+  }
+
+  <div class="spacer">The end of the story. Scroll back up, or keep reading.</div>
+
+  <h2>The decisions behind it</h2>
+  <ul>
+    <li><strong>GSAP tweens a plain object, not the 3D objects and not signals.</strong> <code>params</code> is the single source of truth for the scene. GSAP can interpolate any number (and colour strings) on any object, and one <code>render()</code> applies them. That keeps GSAP unaware of three.js, and three.js unaware of scroll.</li>
+    <li><strong>One loop.</strong> Three.js renders from <code>gsap.ticker</code> instead of its own <code>setAnimationLoop</code>, so scroll smoothing and rendering happen in the same frame (loop strategy C). It's added outside the zone and only while the canvas is on screen.</li>
+    <li><strong>Only meaningful changes reach Angular</strong> (loop strategy B): the chapter index, through a signal, into an OnPush component.</li>
+    <li><strong>Content first.</strong> The captions are real HTML rendered by Angular, on the server too. Without WebGL, without JS, with reduced motion, the story is still there to read. The 3D is enhancement.</li>
+    <li><strong>Reduced motion</strong> (lesson 05's switch): no pin, no scrub, one still frame, chapters as a list. <code>useGsap</code> rebuilds the setup when it changes.</li>
+    <li><strong>Lazy and server-safe:</strong> the server renders the poster; GSAP and three.js arrive only when the block scrolls into view (<code>&#64;defer</code>); nothing touches <code>window</code> before <code>afterNextRender</code>.</li>
+    <li><strong>Clean exit:</strong> navigate away and the context reverts (timeline, ScrollTrigger, pin spacer), the ticker callback is removed, and every geometry, material and the WebGL context are disposed.</li>
+  </ul>
+
+  <h2>Where each lesson shows up</h2>
+  <table>
+    <thead><tr><th>Lesson</th><th>In this page</th></tr></thead>
+    <tbody>
+      <tr><td>01–02 templates, control flow</td><td><code>&#64;for</code> over chapters, <code>[class.is-active]</code></td></tr>
+      <tr><td>03 signals</td><td><code>chapter</code> and <code>reduced</code> signals</td></tr>
+      <tr><td>04 components</td><td><code>&lt;app-scroll-scene&gt;</code> as a self-contained block</td></tr>
+      <tr><td>05 services &amp; DI</td><td><code>MotionPreference</code>, injected into <code>useGsap</code></td></tr>
+      <tr><td>06 routing</td><td>a lazy route; cleanup on navigation</td></tr>
+      <tr><td>09 lifecycle</td><td><code>viewChild</code> canvas, <code>afterNextRender</code>, <code>DestroyRef</code></td></tr>
+      <tr><td>10 change detection</td><td>OnPush, everything per-frame outside the zone, the meter</td></tr>
+      <tr><td>11 &#64;defer</td><td>poster placeholder, GSAP + three.js loaded on viewport</td></tr>
+      <tr><td>12 SSR</td><td>server-rendered captions and poster, browser-only setup</td></tr>
+      <tr><td>13 native animation</td><td>CSS transitions on the captions, CSS variable progress bar</td></tr>
+      <tr><td>14 GSAP</td><td><code>useGsap</code>, ScrollTrigger pin + scrub, context revert</td></tr>
+      <tr><td>15 Three.js</td><td>renderer, scene, disposal, capped pixel ratio, pause off-screen</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The 30-second version (for the interview)</h2>
+  <p>"Angular owns structure, content and state; GSAP owns time and scroll; Three.js owns pixels. They meet at three narrow points: GSAP tweens a plain parameters object that the render function reads, both run on one ticker outside Angular's zone, and only meaningful changes, like the active chapter, become signals in OnPush components. The content is server-rendered HTML, the 3D is deferred until it's on screen, reduced motion gets a static version from one shared preference, and everything is reverted and disposed when the component is destroyed."</p>
+</article>

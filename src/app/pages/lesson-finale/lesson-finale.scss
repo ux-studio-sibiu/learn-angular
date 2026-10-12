@@ -1,0 +1,16 @@
+.meter {
+  position: sticky; top: 8px; z-index: 5; width: fit-content; margin: 0 0 12px auto; padding: 6px 12px; border-radius: 6px;
+  background: var(--code-bg); font-family: ui-monospace, Consolas, monospace; font-size: 0.8rem;
+}
+
+.poster { position: relative; height: min(78vh, 640px); border-radius: 12px; overflow: hidden; }
+.poster img { object-fit: cover; }
+
+.skeleton { display: grid; place-items: center; height: min(78vh, 640px); border-radius: 12px; background: var(--code-bg); color: var(--muted); }
+
+.flow {
+  margin: 16px 0; padding: 14px 16px; border-radius: 8px; background: var(--code-bg);
+  font-family: ui-monospace, Consolas, monospace; font-size: 0.8rem; line-height: 1.7; white-space: pre-wrap; overflow-x: auto;
+}
+
+.spacer { display: grid; place-items: center; min-height: 30vh; color: var(--muted); }
