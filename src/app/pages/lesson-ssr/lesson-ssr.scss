@@ -1,0 +1,24 @@
+.facts {
+  display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0;
+  font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem;
+
+  dt { color: var(--muted); }
+  dd { margin: 0; font-weight: 700; }
+}
+
+.probes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+
+.spacer {
+  display: grid; place-items: center; min-height: 80vh; margin: 16px 0;
+  border: 1px dashed var(--line); border-radius: 8px; color: var(--muted);
+}
+
+.timeline {
+  padding-left: 0; list-style: none; counter-reset: step;
+
+  li { position: relative; padding-left: 32px; margin-bottom: 8px; counter-increment: step; }
+  li::before {
+    content: counter(step); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 0.75rem; font-weight: 700;
+  }
+}

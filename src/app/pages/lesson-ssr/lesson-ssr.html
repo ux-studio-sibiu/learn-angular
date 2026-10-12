@@ -1,0 +1,98 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 12</p>
+  <h1>SSR &amp; hydration</h1>
+  <p>Until now this site was a client-side app: the server sent an empty <code>&lt;app-root&gt;</code> and the browser built everything. Now it's server-rendered. The HTML arrives complete (good for SEO, link previews and first paint), and Angular then <strong>hydrates</strong> it: it attaches to the existing DOM instead of rebuilding it. After that, navigation is client-side again, exactly like Next.js.</p>
+
+  <table>
+    <thead><tr><th>Render mode (<code>app.routes.server.ts</code>)</th><th>Next.js</th><th>Classic web</th><th>Used here for</th></tr></thead>
+    <tbody>
+      <tr><td><code>RenderMode.Prerender</code></td><td>static generation (SSG), <code>generateStaticParams</code></td><td>static HTML files</td><td>the roadmap, the 5 talk pages</td></tr>
+      <tr><td><code>RenderMode.Server</code></td><td>dynamic rendering per request</td><td>a Razor view / PHP page</td><td>all lessons (they read <code>/api</code> data)</td></tr>
+      <tr><td><code>RenderMode.Client</code></td><td>a client-only page</td><td>a jQuery / Vite SPA</td><td>Backstage (state only exists in the browser)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. Where am I running? -->
+  <h2>1. The same component, run twice</h2>
+  <p>On a full page load, this component's constructor runs on the <strong>server</strong> (to produce HTML) and again in the <strong>browser</strong> (to hydrate). Reload this page (F5) and read the values; then open View Source (Ctrl+U) and search for "rendered on" to see what the server sent.</p>
+  <div class="demo">
+    <dl class="facts">
+      <dt>rendered on</dt><dd>{{ platform }}</dd>
+      <dt>server render time</dt><dd>{{ renderedAt || '— (not server-rendered: you navigated here client-side, or the server is not doing SSR)' }}</dd>
+      <dt>hydrated in browser</dt><dd>{{ hydratedAt() || 'not yet' }}</dd>
+    </dl>
+  </div>
+  <ul class="note">
+    <li>"rendered on" says <code>server</code> in the page source and <code>browser</code> on screen: the browser re-ran the constructor and updated that text during hydration.</li>
+    <li>The server time comes through <strong>TransferState</strong>: the server writes it into the HTML as JSON, and the browser reads it instead of computing its own. That's how you avoid values that change between server and browser (dates, random IDs).</li>
+    <li>Navigate to another lesson and back: now there's no server render at all. Only the first page load is server-rendered; after that, the router renders in the browser.</li>
+  </ul>
+
+  <!-- 2. HTTP transfer cache -->
+  <h2>2. HTTP transfer cache: fetch once, on the server</h2>
+  <p>This page loads <code>/api/talks.json</code>. During SSR the server fetches it and embeds the response in the HTML. When the browser hydrates and makes the same request, it's answered from that cache. No network call.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <span>Loaded <strong>{{ talks().length }} talks</strong>. Real network requests for <code>/api/talks.json</code> since this tab loaded: <strong>{{ networkRequests() ?? '…' }}</strong></span>
+      <button type="button" (click)="countNetworkRequests()">Recount</button>
+    </div>
+  </div>
+  <ul class="note">
+    <li>After a reload: <strong>0</strong>, answered from the transfer cache. Navigate to another lesson and back: the browser fetches it itself and the count goes up. In Next.js terms: the server's fetch result is passed down instead of fetched again.</li>
+    <li>The count comes from the browser's Performance API, not from our lesson 07 interceptor, because <strong>your interceptors run before Angular's built-in ones</strong> (the transfer cache, and the one that resolves relative URLs like <code>/api/…</code> on the server). An interceptor in front of the cache sees cached responses too.</li>
+    <li>That ordering also means: never turn URLs absolute in your own interceptor for SSR. The cache key would differ between server and browser, and every request would be made twice. (I hit exactly that while building this lesson.)</li>
+  </ul>
+
+  <!-- 3. Incremental hydration -->
+  <h2>3. Incremental hydration: HTML now, JavaScript later</h2>
+  <p>Every probe below is fully server-rendered (you can read it immediately). The difference is when its JavaScript wakes up. <strong>Reload the page</strong> to see it; after client-side navigation, all blocks are created normally.</p>
+  <div class="demo">
+    <div class="probes">
+      <app-hydration-probe label="Normal: hydrates right away" />
+      <!-- hydrate … applies to the server-rendered first load; the regular trigger (on immediate) to in-app navigation -->
+      @defer (on immediate; hydrate on interaction) {
+        <app-hydration-probe label="hydrate on interaction" />
+      }
+      @defer (on immediate; hydrate never) {
+        <app-hydration-probe label="hydrate never (static)" />
+      }
+    </div>
+  </div>
+  <ul class="note">
+    <li><strong>on interaction:</strong> stays inert until you click it. Thanks to <strong>event replay</strong>, that first click isn't lost: it triggers hydration and is then replayed, so the counter goes to 1.</li>
+    <li><strong>never:</strong> stays server HTML forever. Clicking does nothing. Perfect for static content like an article body or a footer.</li>
+    <li>This is how a long editorial page can ship a 3D hero or a chart without paying for its JavaScript up front, while still showing real content (not a placeholder) to readers and search engines.</li>
+    <li><code>hydrate …</code> triggers only apply to the first, server-rendered load. After in-app navigation there is nothing to hydrate, so the <em>regular</em> trigger in the same block decides (<code>on immediate</code>, <code>on viewport</code>). Without one, the block wouldn't render at all after navigating here (another thing I hit while building this).</li>
+  </ul>
+  <div class="spacer">Scroll ↓ for hydrate on viewport</div>
+  <div class="demo">
+    @defer (on viewport; hydrate on viewport) {
+      <app-hydration-probe label="hydrate on viewport" />
+    } @placeholder {
+      <div class="note">Placeholder (only used after in-app navigation)</div>
+    }
+  </div>
+
+  <h2>4. What runs where: the rules</h2>
+  <ul>
+    <li><strong>On the server:</strong> constructors, field initializers, <code>computed</code>, <code>effect</code>, <code>ngOnInit</code>, templates, HTTP calls, guards and resolvers.</li>
+    <li><strong>Browser only:</strong> <code>afterNextRender</code> / <code>afterEveryRender</code>. That's where DOM libraries (GSAP, Three.js), <code>window</code>, <code>localStorage</code>, <code>matchMedia</code>, timers and observers belong.</li>
+    <li>When you need to branch: <code>isPlatformBrowser(inject(PLATFORM_ID))</code> (≈ <code>typeof window !== 'undefined'</code> in Next.js).</li>
+    <li>Never-ending timers started on the server keep the app from becoming "stable", so the server render never finishes.</li>
+  </ul>
+  <p>Adding SSR forced fixes in earlier lessons, all following those rules (see the diff):</p>
+  <ol class="timeline">
+    <li>Lesson 03: the <code>localStorage</code> effect now only writes in the browser.</li>
+    <li>Lesson 10: the card timers and the meter start in <code>afterNextRender</code>; the render tracker skips <code>element.animate()</code> on the server.</li>
+    <li>Lesson 07: the interceptor skips the fake delay on the server, and in the browser while the app is starting up (those requests come from the transfer cache).</li>
+    <li>Lesson 03 again: <code>document.title</code> became the <code>Title</code> service, because there's no global <code>document</code> on the server.</li>
+    <li>Already safe: the canvas (lesson 09, all in <code>afterNextRender</code>) and <code>MotionPreference</code> (lesson 05, checks <code>PLATFORM_ID</code>).</li>
+  </ol>
+
+  <h2>Also good to know</h2>
+  <ul>
+    <li><strong>Hydration mismatches</strong> happen when the browser's first render differs structurally from the server HTML: browser-only branches in templates, third-party scripts editing the DOM early (A/B testing tools, consent banners). Angular logs them in dev mode. <code>ngSkipHydration</code> on a component opts it out (≈ <code>dynamic(..., &#123; ssr: false &#125;)</code>).</li>
+    <li>Angular has no React Server Components: every component's JS is still sent to the browser. Incremental hydration and <code>&#64;defer</code> are how you delay paying for it.</li>
+    <li><code>ng serve</code> now renders on the server too. <code>npm run build</code> + <code>npm run serve:ssr:learn-angular</code> runs the real Express server from <code>src/server.ts</code> on port 4000.</li>
+  </ul>
+</article>

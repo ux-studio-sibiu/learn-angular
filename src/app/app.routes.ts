@@ -19,5 +19,6 @@ export const routes: Routes = [
   { path: 'lessons/lifecycle', loadComponent: () => import('./pages/lesson-lifecycle/lesson-lifecycle').then(m => m.LessonLifecycle), title: '09 Lifecycle & DOM' },
   { path: 'lessons/change-detection', loadComponent: () => import('./pages/lesson-change-detection/lesson-change-detection').then(m => m.LessonChangeDetection), title: '10 Change detection' },
   { path: 'lessons/defer', loadComponent: () => import('./pages/lesson-defer/lesson-defer').then(m => m.LessonDefer), title: '11 @defer & performance' },
+  { path: 'lessons/ssr', loadComponent: () => import('./pages/lesson-ssr/lesson-ssr').then(m => m.LessonSsr), title: '12 SSR & hydration' },
   { path: '**', redirectTo: '' }
 ];

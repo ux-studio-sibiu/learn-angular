@@ -1,4 +1,6 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Component, computed, effect, inject, PLATFORM_ID, signal } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 
 type Ticket = { id: number; name: string; price: number; qty: number };
 
@@ -20,6 +22,7 @@ export class LessonSignals {
 
   // 2. computed chains: each one re-runs only when a signal it read changes, and caches the result
   protected readonly query = signal('');
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly saved = loadQty(); // field initializers run top to bottom, so this is ready for `tickets`
   protected readonly tickets = signal<Ticket[]>(
     [
@@ -38,8 +41,15 @@ export class LessonSignals {
   constructor() {
     // 3. effect ≈ useEffect with auto-tracked deps. Side effects only (DOM, storage, logging, later GSAP).
     // Must be created in an injection context (constructor / field) so Angular can destroy it with the component.
-    effect(() => { document.title = `Cart (${this.totalQty()}) · Signals`; });
-    effect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(this.tickets().map(t => t.qty))));
+    // Lesson 12: the Title service instead of document.title: there's no global document on the server
+    const title = inject(Title);
+    effect(() => title.setTitle(`Cart (${this.totalQty()}) · Signals`));
+    // Lesson 12: effects also run during server rendering, where localStorage doesn't exist. Read the signal
+    // either way (so the effect keeps tracking it), but only write in the browser.
+    effect(() => {
+      const data = JSON.stringify(this.tickets().map(t => t.qty));
+      if (this.isBrowser) localStorage.setItem(STORAGE_KEY, data);
+    });
   }
 
   // ✔ New array + new object for the changed row, so the signal sees a new reference

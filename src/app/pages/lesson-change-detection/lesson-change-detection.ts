@@ -1,4 +1,4 @@
-import { afterEveryRender, Component, DestroyRef, ElementRef, inject, NgZone, signal, viewChild } from '@angular/core';
+import { afterEveryRender, afterNextRender, Component, DestroyRef, ElementRef, inject, NgZone, signal, viewChild } from '@angular/core';
 import { BouncingCanvas } from '../lesson-lifecycle/bouncing-canvas';
 import { CdDefaultCard, CdOnPushPlainCard, CdOnPushSignalCard } from './cd-cards';
 
@@ -21,11 +21,16 @@ export class LessonChangeDetection {
     afterEveryRender(() => { this.total++; this.stamps.push(performance.now()); });
 
     // The meter's own refresh timer runs outside the zone, so measuring doesn't add passes. It writes to the DOM directly.
-    const id = inject(NgZone).runOutsideAngular(() => setInterval(() => {
-      const now = performance.now();
-      this.stamps = this.stamps.filter(t => t > now - 1000);
-      this.meter().nativeElement.textContent = `${this.stamps.length} per second · ${this.total} total`;
-    }, 250));
-    inject(DestroyRef).onDestroy(() => clearInterval(id));
+    // Started in afterNextRender (lesson 12): browser only, and the meter element exists by then.
+    const zone = inject(NgZone);
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const id = zone.runOutsideAngular(() => setInterval(() => {
+        const now = performance.now();
+        this.stamps = this.stamps.filter(t => t > now - 1000);
+        this.meter().nativeElement.textContent = `${this.stamps.length} per second · ${this.total} total`;
+      }, 250));
+      destroyRef.onDestroy(() => clearInterval(id));
+    });
   }
 }

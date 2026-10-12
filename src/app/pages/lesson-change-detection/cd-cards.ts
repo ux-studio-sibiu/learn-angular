@@ -1,12 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, PLATFORM_ID, signal } from '@angular/core';
 
 // An inject()-based helper ≈ a custom React hook: call it in a field initializer, get a function back.
 // The template calls track() in a binding, so it runs every time Angular re-evaluates that template.
 // It flashes the card and writes the count straight to the DOM (a signal here would trigger yet another check).
 function useRenderTracker() {
   const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID)); // lesson 12: the server's DOM has no element.animate()
   let renders = 0;
   return () => {
+    if (!isBrowser) return '';
     const counter = host.querySelector('.count');
     if (counter) counter.textContent = String(++renders);
     host.animate([{ outlineColor: 'var(--accent)' }, { outlineColor: 'transparent' }], 400);
@@ -14,10 +17,15 @@ function useRenderTracker() {
   };
 }
 
-// A ticking timer started in the constructor (inside the zone, so each tick triggers an app-wide check)
+// A ticking timer inside the zone, so each tick triggers an app-wide check.
+// Lesson 12: started in afterNextRender (browser only). On the server, a never-ending timer in the zone means
+// the app is never "stable", so the server render would never finish.
 function useInterval(fn: () => void) {
-  const id = setInterval(fn, 1000);
-  inject(DestroyRef).onDestroy(() => clearInterval(id));
+  const destroyRef = inject(DestroyRef);
+  afterNextRender(() => {
+    const id = setInterval(fn, 1000);
+    destroyRef.onDestroy(() => clearInterval(id));
+  });
 }
 
 const styles = `
