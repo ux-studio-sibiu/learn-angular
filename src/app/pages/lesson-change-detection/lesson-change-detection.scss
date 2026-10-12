@@ -1,0 +1,10 @@
+.meter {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 10px 14px; margin-bottom: 12px;
+  border-radius: 6px; background: var(--code-bg); font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem;
+
+  strong { font-size: 1rem; }
+}
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+
+button.is-active { border-color: var(--accent); color: var(--accent); }

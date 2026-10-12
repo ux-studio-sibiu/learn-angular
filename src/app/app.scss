@@ -9,10 +9,34 @@
 }
 
 .site-nav {
-  display: flex; flex-wrap: wrap; gap: 4px 16px; flex: 1; justify-content: flex-end;
+  display: flex; align-items: center; gap: 16px; flex: 1; justify-content: flex-end;
 
   a { color: var(--muted); text-decoration: none; }
   a.is-active, a:hover { color: var(--accent); }
+}
+
+.lessons-menu {
+  position: relative;
+
+  summary {
+    color: var(--muted); cursor: pointer; list-style: none; user-select: none;
+
+    &::-webkit-details-marker { display: none; }
+    &::after { content: ' ▾'; font-size: 0.8em; }
+    &:hover { color: var(--accent); }
+  }
+
+  &[open] summary { color: var(--accent); }
+  &[open] summary::after { content: ' ▴'; }
+
+  .menu-panel {
+    position: absolute; top: calc(100% + 10px); right: 0; z-index: 10;
+    display: flex; flex-direction: column; min-width: 200px; max-height: 70vh; overflow-y: auto; padding: 6px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg); box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+
+    a { padding: 6px 10px; border-radius: 6px; white-space: nowrap; }
+    a:hover { background: var(--code-bg); }
+  }
 }
 
 .favorites-badge {

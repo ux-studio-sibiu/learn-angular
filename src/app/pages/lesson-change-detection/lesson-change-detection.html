@@ -1,0 +1,78 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 10</p>
+  <h1>Change detection, zone.js, OnPush &amp; zoneless</h1>
+  <p>Change detection is how Angular gets from "data changed" to "DOM updated". It's the biggest conceptual difference from React, and the one that matters most once animation loops are involved.</p>
+
+  <table>
+    <thead><tr><th></th><th>What triggers an update</th><th>What gets re-checked</th></tr></thead>
+    <tbody>
+      <tr><td><strong>React</strong></td><td>you call <code>setState</code></td><td>that component and its children re-run, then diff</td></tr>
+      <tr><td><strong>Angular + zone.js</strong> (this site)</td><td><em>any</em> async event: click, timer, fetch, <code>requestAnimationFrame</code></td><td>every Default component's bindings, top to bottom</td></tr>
+      <tr><td><strong>+ OnPush</strong></td><td>same</td><td>skips a component unless its inputs, its own events or its signals changed (≈ <code>React.memo</code>)</td></tr>
+      <tr><td><strong>Zoneless</strong></td><td>only signals, template events, <code>markForCheck()</code></td><td>only components marked dirty</td></tr>
+      <tr><td><strong>jQuery</strong></td><td colspan="2">no automatic updates: you change the DOM yourself (which is exactly what the meter below does)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. The animation trap -->
+  <h2>1. The animation trap: 60 checks per second</h2>
+  <p>zone.js patches every async browser API. After each one finishes, it tells Angular "something might have changed", and Angular checks the app. A <code>requestAnimationFrame</code> loop is an async callback 60 times a second. Start the canvas inside the zone and watch the meter.</p>
+  <div class="demo">
+    <div class="meter">App render passes: <strong #meter>…</strong></div>
+    <div class="demo-row">
+      <button type="button" (click)="zoneMode.set('inside')" [class.is-active]="zoneMode() === 'inside'">Loop inside the zone ✘</button>
+      <button type="button" (click)="zoneMode.set('outside')" [class.is-active]="zoneMode() === 'outside'">Loop outside the zone ✔</button>
+      <button type="button" (click)="zoneMode.set('off')" [class.is-active]="zoneMode() === 'off'">Stop</button>
+    </div>
+    <p></p>
+    <!-- @switch re-creates the canvas when the mode changes, so the loop restarts in the chosen zone -->
+    @switch (zoneMode()) {
+      @case ('inside') { <app-bouncing-canvas zone="inside" /> }
+      @case ('outside') { <app-bouncing-canvas zone="outside" /> }
+    }
+  </div>
+  <ul class="note">
+    <li>The baseline of a few passes per second comes from the three card timers in section 2.</li>
+    <li>Inside the zone the ball looks identical, but Angular re-checks the whole app every frame. On a heavy editorial page, that's dropped frames.</li>
+    <li>The fix is one line in the canvas (<code>bouncing-canvas.ts</code>): <code>ngZone.runOutsideAngular(() =&gt; requestAnimationFrame(tick))</code>. Every rAF scheduled from there stays outside too. GSAP tickers, Three.js render loops, scroll and pointer-move listeners all belong there.</li>
+    <li>Need to update the UI from outside? Set a <strong>signal</strong> (only its readers get checked), or wrap the call in <code>ngZone.run()</code>.</li>
+  </ul>
+
+  <!-- 2. OnPush -->
+  <h2>2. OnPush: skip what didn't change</h2>
+  <p>Each card has a timer that adds 1 to <code>seconds</code> every second, and flashes when Angular re-renders its template. Click the unrelated button, run the loop inside the zone above, and compare.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="pageClicks.set(pageClicks() + 1)">Unrelated click on the page ({{ pageClicks() }})</button>
+    </div>
+    <p></p>
+    <div class="cards">
+      <app-cd-default-card />
+      <app-cd-onpush-plain-card />
+      <app-cd-onpush-signal-card />
+    </div>
+  </div>
+  <ul class="note">
+    <li><strong>Default:</strong> re-checked on every pass anywhere in the app: each unrelated click, each frame of the inside-zone loop.</li>
+    <li><strong>OnPush + plain field:</strong> the timer runs, but the view stays frozen. Nothing told Angular this component changed. Click inside it and the real number appears (its own event marks it dirty). That's the bug people hit when they add OnPush to old code.</li>
+    <li><strong>OnPush + signal:</strong> updates once a second and ignores everything else. <code>seconds.set()</code> marks exactly this component. That's the combination to use by default.</li>
+    <li>In <code>ng serve</code> (dev mode) Angular runs an extra verification pass that re-evaluates Default components, which is why the Default card's count climbs about twice as fast as the meter. Production builds skip it.</li>
+  </ul>
+
+  <h2>3. What marks an OnPush component for checking</h2>
+  <ul>
+    <li>An <strong>input</strong> got a new value (by reference: mutating an object doesn't count, lesson 03).</li>
+    <li>An <strong>event</strong> in its own template, or in a child's.</li>
+    <li>A <strong>signal</strong> its template reads changed.</li>
+    <li>The <code>async</code> pipe received a value (the pre-signals way).</li>
+    <li>Someone called <code>inject(ChangeDetectorRef).markForCheck()</code>: the manual escape hatch you'll see in older OnPush code.</li>
+  </ul>
+
+  <h2>4. Zoneless: the end state</h2>
+  <p>Replace <code>provideZoneChangeDetection()</code> with <code>provideZonelessChangeDetection()</code> in <code>app.config.ts</code> and remove <code>zone.js</code> from the polyfills. Then the list above is the <em>only</em> way anything updates: no more "check everything after every event", no <code>runOutsideAngular</code> needed, about 11 kB less JavaScript.</p>
+  <ul>
+    <li>It's stable in v20 and the default from v21. WEF's current nav still loads zone.js, so this is a real decision for their rebuild.</li>
+    <li>What breaks: plain fields changed from timers, fetch callbacks or third-party callbacks (the middle card's bug, everywhere). Signals + OnPush everywhere first, zoneless after. This site isn't switched yet, since lessons 01–02 deliberately use plain fields.</li>
+    <li>Also good to know: <code>ExpressionChangedAfterItHasBeenCheckedError</code> (NG0100) is dev mode's verification pass catching a binding that changed <em>during</em> a check, usually state set in <code>ngAfterViewInit</code>. Fix the data flow rather than silencing it.</li>
+  </ul>
+</article>

@@ -17,5 +17,6 @@ export const routes: Routes = [
   { path: 'lessons/http', loadComponent: () => import('./pages/lesson-http/lesson-http').then(m => m.LessonHttp), resolve: { talks: talksResolver }, title: '07 HTTP' },
   { path: 'lessons/forms', loadComponent: () => import('./pages/lesson-forms/lesson-forms').then(m => m.LessonForms), canDeactivate: [unsavedChangesGuard], title: '08 Forms' },
   { path: 'lessons/lifecycle', loadComponent: () => import('./pages/lesson-lifecycle/lesson-lifecycle').then(m => m.LessonLifecycle), title: '09 Lifecycle & DOM' },
+  { path: 'lessons/change-detection', loadComponent: () => import('./pages/lesson-change-detection/lesson-change-detection').then(m => m.LessonChangeDetection), title: '10 Change detection' },
   { path: '**', redirectTo: '' }
 ];

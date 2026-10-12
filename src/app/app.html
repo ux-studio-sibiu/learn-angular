@@ -3,16 +3,24 @@
   <nav class="site-nav">
     <!-- routerLink ≈ next/link; routerLinkActive adds the class when the URL matches -->
     <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Roadmap</a>
-    <a routerLink="/lessons/setup" routerLinkActive="is-active">00 Setup</a>
-    <a routerLink="/lessons/components" routerLinkActive="is-active">01 Components</a>
-    <a routerLink="/lessons/control-flow" routerLinkActive="is-active">02 Control flow</a>
-    <a routerLink="/lessons/signals" routerLinkActive="is-active">03 Signals</a>
-    <a routerLink="/lessons/inputs" routerLinkActive="is-active">04 Inputs</a>
-    <a routerLink="/lessons/services" routerLinkActive="is-active">05 Services</a>
-    <a routerLink="/lessons/routing" routerLinkActive="is-active">06 Routing</a>
-    <a routerLink="/lessons/http" routerLinkActive="is-active">07 HTTP</a>
-    <a routerLink="/lessons/forms" routerLinkActive="is-active">08 Forms</a>
-    <a routerLink="/lessons/lifecycle" routerLinkActive="is-active">09 Lifecycle</a>
+
+    <!-- Native <details> dropdown: opens/closes without JS. A link click closes it; outside clicks are handled in app.ts -->
+    <details #lessonsMenu class="lessons-menu">
+      <summary>Lessons</summary>
+      <div class="menu-panel" (click)="lessonsMenu.open = false">
+        <a routerLink="/lessons/setup" routerLinkActive="is-active">00 Setup</a>
+        <a routerLink="/lessons/components" routerLinkActive="is-active">01 Components</a>
+        <a routerLink="/lessons/control-flow" routerLinkActive="is-active">02 Control flow</a>
+        <a routerLink="/lessons/signals" routerLinkActive="is-active">03 Signals</a>
+        <a routerLink="/lessons/inputs" routerLinkActive="is-active">04 Inputs</a>
+        <a routerLink="/lessons/services" routerLinkActive="is-active">05 Services</a>
+        <a routerLink="/lessons/routing" routerLinkActive="is-active">06 Routing</a>
+        <a routerLink="/lessons/http" routerLinkActive="is-active">07 HTTP</a>
+        <a routerLink="/lessons/forms" routerLinkActive="is-active">08 Forms</a>
+        <a routerLink="/lessons/lifecycle" routerLinkActive="is-active">09 Lifecycle</a>
+        <a routerLink="/lessons/change-detection" routerLinkActive="is-active">10 Change detection</a>
+      </div>
+    </details>
   </nav>
   <!-- Lesson 05: the header and the lesson page are far apart in the tree, but inject the same FavoritesStore instance -->
   <a class="favorites-badge" routerLink="/lessons/services" [class.has-items]="favorites.count() > 0" aria-label="Favorites">★ {{ favorites.count() }}</a>

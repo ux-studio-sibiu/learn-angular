@@ -1,4 +1,4 @@
-import { afterNextRender, Component, DestroyRef, ElementRef, inject, input, signal, viewChild } from '@angular/core';
+import { afterNextRender, Component, DestroyRef, ElementRef, inject, input, NgZone, signal, viewChild } from '@angular/core';
 import { MotionPreference } from '../../services/motion-preference';
 
 // Module-level state so the page can show what's running, even after a canvas is gone
@@ -18,6 +18,8 @@ export function stopLeakedLoops() { leaked.splice(0).forEach(stop => stop()); }
 })
 export class BouncingCanvas {
   readonly leak = input(false);
+  readonly zone = input<'inside' | 'outside'>('outside'); // 'inside' only exists to show the problem in lesson 10
+  private readonly ngZone = inject(NgZone);
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas'); // ≈ useRef + ref={canvas}
   private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionPreference); // lesson 05: one switch for reduced motion
@@ -39,7 +41,6 @@ export class BouncingCanvas {
       });
       resize.observe(el);
 
-      // Note: under zone.js every frame also triggers change detection. Lesson 10 fixes that with runOutsideAngular.
       const tick = () => {
         if (!this.motion.reduced()) {
           s.x += s.vx; s.y += s.vy;
@@ -50,7 +51,11 @@ export class BouncingCanvas {
         ctx.beginPath(); ctx.arc(s.x, s.y, 16, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
         loop.id = requestAnimationFrame(tick);
       };
-      loop.id = requestAnimationFrame(tick);
+      // Lesson 10: zone.js patches requestAnimationFrame, so inside the zone every frame triggers change detection.
+      // runOutsideAngular starts the loop where zone.js can't see it; rAF calls made from there stay outside too.
+      const start = () => { loop.id = requestAnimationFrame(tick); };
+      if (this.zone() === 'outside') this.ngZone.runOutsideAngular(start);
+      else this.ngZone.run(start);
       activeLoops.update(n => n + 1);
 
       this.destroyRef.onDestroy(() => {
