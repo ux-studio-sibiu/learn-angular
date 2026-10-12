@@ -16,5 +16,6 @@ export const routes: Routes = [
   { path: 'lessons/routing', loadChildren: () => import('./pages/lesson-routing/routing.routes').then(m => m.routingRoutes) }, // a whole route subtree
   { path: 'lessons/http', loadComponent: () => import('./pages/lesson-http/lesson-http').then(m => m.LessonHttp), resolve: { talks: talksResolver }, title: '07 HTTP' },
   { path: 'lessons/forms', loadComponent: () => import('./pages/lesson-forms/lesson-forms').then(m => m.LessonForms), canDeactivate: [unsavedChangesGuard], title: '08 Forms' },
+  { path: 'lessons/lifecycle', loadComponent: () => import('./pages/lesson-lifecycle/lesson-lifecycle').then(m => m.LessonLifecycle), title: '09 Lifecycle & DOM' },
   { path: '**', redirectTo: '' }
 ];

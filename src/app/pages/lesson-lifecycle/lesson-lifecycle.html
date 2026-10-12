@@ -1,0 +1,79 @@
+<article class="nsc-lesson">
+  <p class="eyebrow">Lesson 09</p>
+  <h1>Lifecycle &amp; the DOM</h1>
+  <p>Most of the time Angular owns the DOM and you just bind to it. Libraries like GSAP, Three.js, charts or maps need the <em>real</em> element, at the right moment, and must be torn down when the component goes away. This lesson is that moment, and that teardown.</p>
+
+  <table>
+    <thead><tr><th>Angular</th><th>React</th><th>jQuery</th></tr></thead>
+    <tbody>
+      <tr><td><code>constructor</code></td><td>(the function body, but that runs on every render)</td><td>—</td></tr>
+      <tr><td><code>effect(() =&gt; input())</code> / <code>ngOnChanges</code></td><td><code>useEffect(..., [prop])</code></td><td>re-run code on a custom event</td></tr>
+      <tr><td><code>viewChild('ref')</code></td><td><code>useRef</code> + <code>ref=&#123;…&#125;</code></td><td><code>$('#id')</code></td></tr>
+      <tr><td><code>afterNextRender(() =&gt; …)</code></td><td><code>useEffect(..., [])</code> / <code>useLayoutEffect</code></td><td><code>$(document).ready</code> → <code>$(el).plugin()</code></td></tr>
+      <tr><td><code>inject(DestroyRef).onDestroy()</code> / <code>ngOnDestroy</code></td><td>the cleanup function returned from <code>useEffect</code></td><td><code>plugin('destroy')</code>, <code>.off()</code>, <code>clearInterval</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 1. Lifecycle order -->
+  <h2>1. The order things happen in</h2>
+  <p>The probe logs every hook, modern and classic. Mount it, change its input, unmount it, and read the log top to bottom.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="showProbe.set(!showProbe())">{{ showProbe() ? 'Unmount' : 'Mount' }} probe</button>
+      <button type="button" (click)="nextLabel()" [disabled]="!showProbe()">Change input (label = {{ label() }})</button>
+      <button type="button" (click)="log.clear()">Clear log</button>
+    </div>
+    <div class="probe-slot">
+      @if (showProbe()) {
+        <app-lifecycle-probe [label]="label()" />
+      }
+    </div>
+    <ol class="log">
+      @for (line of log.lines(); track $index) { <li>{{ line }}</li> }
+    </ol>
+  </div>
+  <ul class="note">
+    <li><strong>Inputs aren't set in the constructor</strong>, so <code>label()</code> is still the default there. Use <code>ngOnInit</code>, an <code>effect</code>, or a <code>computed</code> to work with input values.</li>
+    <li><code>ngOnChanges</code> and the <code>effect</code> both see input changes. In new code, prefer <code>computed</code> / <code>effect</code> on the input signal.</li>
+    <li><code>afterNextRender</code> runs once, after the DOM has been painted, and <strong>only in the browser</strong>. That's what makes it safe with server rendering (lesson 12), unlike <code>ngAfterViewInit</code>.</li>
+    <li>The modern trio (<code>effect</code>, <code>afterNextRender</code>, <code>DestroyRef</code>) is registered in the constructor. The classic interfaces still work and you'll see them in most existing code.</li>
+  </ul>
+
+  <!-- 2. viewChild -->
+  <h2>2. viewChild: a handle on a real element</h2>
+  <p><code>#nameInput</code> marks the element; <code>viewChild('nameInput')</code> returns a signal with its <code>ElementRef</code>, and <code>.nativeElement</code> is the DOM node.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <input #nameInput placeholder="Focus me from code" />
+      <button type="button" (click)="focusInput()">Focus</button>
+      <button type="button" (click)="measure()">Measure</button>
+      @if (measured()) { <span class="note">{{ measured() }}</span> }
+    </div>
+  </div>
+  <p class="note">Use this for things bindings can't do: focus, measuring, scrolling, and handing the element to a library. For classes, styles and text, keep using bindings. Writing to the DOM by hand behind Angular's back is the jQuery habit to unlearn. Related: <code>viewChildren()</code> for a list, <code>contentChild()</code> / <code>contentChildren()</code> for projected content.</p>
+
+  <!-- 3. A DOM library done right -->
+  <h2>3. Wrapping a DOM library: create, run, destroy</h2>
+  <p>The canvas is a stand-in for GSAP or Three.js: it grabs its element with <code>viewChild</code>, starts a <code>requestAnimationFrame</code> loop and a <code>ResizeObserver</code> in <code>afterNextRender</code>, and stops both in <code>DestroyRef.onDestroy</code>. It also reads <code>MotionPreference</code> from lesson 05, so "reduce" there freezes the ball.</p>
+  <div class="demo">
+    <div class="demo-row">
+      <button type="button" (click)="showCanvas.set(!showCanvas())">{{ showCanvas() ? 'Unmount' : 'Mount' }} canvas</button>
+      <label class="inline"><input type="checkbox" [checked]="leak()" (change)="leak.set(!leak())" /> forget cleanup ✘</label>
+      <span>Active rAF loops: <span class="loops" [class.is-leaking]="activeLoops() > (showCanvas() ? 1 : 0)">{{ activeLoops() }}</span></span>
+      <button type="button" (click)="stopLeakedLoops()">Stop leaked loops</button>
+    </div>
+    <p></p>
+    @if (showCanvas()) {
+      <app-bouncing-canvas [leak]="leak()" />
+    }
+  </div>
+  <p class="note">Tick <strong>forget cleanup</strong>, then unmount and remount a few times: the counter keeps climbing. Each "gone" canvas is still animating in memory, invisible, eating CPU. That's the classic SPA leak (in React it's the missing <code>useEffect</code> cleanup, in jQuery a plugin never destroyed). With GSAP it means ScrollTriggers firing for elements that no longer exist; with Three.js, GPU memory that never comes back.</p>
+
+  <h2>The recipe for lessons 14–16</h2>
+  <ol>
+    <li><code>viewChild.required('el')</code> for the container or canvas.</li>
+    <li><code>afterNextRender(() =&gt; …)</code> to create the library instance (browser only, DOM ready).</li>
+    <li><code>inject(DestroyRef).onDestroy(() =&gt; …)</code> to kill timelines, observers, loops, renderers.</li>
+    <li>Lesson 10 adds the last piece: run the loop <strong>outside Angular's zone</strong>, so 60 frames a second don't trigger 60 change detection passes.</li>
+  </ol>
+</article>
