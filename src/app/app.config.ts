@@ -22,7 +22,8 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     // Router features are opt-in functions (lesson 06): params → component inputs, cross-fade between pages
     // Lesson 13: the callback runs in an injection context. Mark route transitions (styled in styles.scss) and skip them for reduced motion.
-    provideRouter(routes, withComponentInputBinding(), withViewTransitions({ onViewTransitionCreated: markRouteTransition })),
+    // skipInitialTransition: the first navigation (the page load) shows the page as is, without a cross-fade.
+    provideRouter(routes, withComponentInputBinding(), withViewTransitions({ skipInitialTransition: true, onViewTransitionCreated: markRouteTransition })),
     // Lesson 07: makes HttpClient injectable. withFetch() uses fetch() under the hood instead of XHR (better for SSR)
     // Lesson 12: no URL rewriting needed for SSR: on the server Angular resolves relative URLs like /api/… itself
     provideHttpClient(withFetch(), withInterceptors([httpLogInterceptor])),

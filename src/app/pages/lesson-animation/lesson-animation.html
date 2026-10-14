@@ -73,7 +73,7 @@
   </div>
   <ul class="note">
     <li>The one Angular-specific detail: signals update the DOM a moment later, but the browser needs the change <em>inside</em> the callback. So the component calls <code>cdr.detectChanges()</code> there to flush it immediately.</li>
-    <li><strong>Route changes</strong> already use this: <code>withViewTransitions()</code> (lesson 06) wraps every navigation, and <code>styles.scss</code> now gives it a slide-and-fade (<code>::view-transition-old/new(root)</code>). Give an element the same <code>view-transition-name</code> on two pages and it morphs across the navigation (a list thumbnail growing into a detail hero).</li>
+    <li><strong>Route changes</strong> already use this: <code>withViewTransitions()</code> (lesson 06) wraps every navigation, and <code>styles.scss</code> now gives it a cross-fade (<code>::view-transition-old/new(root)</code>). Give an element the same <code>view-transition-name</code> on two pages and it morphs across the navigation (a list thumbnail growing into a detail hero).</li>
     <li>Browser support is good in Chromium and Safari; elsewhere the update just happens without animation.</li>
   </ul>
 

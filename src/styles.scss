@@ -11,12 +11,13 @@
 * { box-sizing: border-box; }
 
 // Lesson 13: route changes (withViewTransitions + the route-transition class set in app.config.ts).
-// The old page fades and slides out, the new one slides in. The header has its own view-transition-name, so it stays put.
+// A plain cross-fade: the old page fades out as the new one fades in, with no movement. The header has its own
+// view-transition-name, so it stays put. The first load is not animated (skipInitialTransition in app.config.ts).
 html.route-transition::view-transition-old(root) { animation: route-out 0.18s ease-in both; }
 html.route-transition::view-transition-new(root) { animation: route-in 0.28s ease-out both; }
 
-@keyframes route-out { to { opacity: 0; transform: translateY(-8px); } }
-@keyframes route-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes route-out { to { opacity: 0; } }
+@keyframes route-in { from { opacity: 0; } }
 
 body {
   margin: 0; background: var(--bg); color: var(--fg);
