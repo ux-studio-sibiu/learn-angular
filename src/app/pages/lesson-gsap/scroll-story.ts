@@ -3,7 +3,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGsap } from '../../services/gsap';
 
-// A pinned, scroll-scrubbed story: the WEF "immersive report" pattern in miniature.
+// A pinned, scroll-scrubbed story: the "immersive report" pattern in miniature.
 // Per-frame values (progress) go to a CSS variable; only the chapter index is a signal (loop strategy B + OnPush).
 @Component({
   selector: 'app-scroll-story',

@@ -71,7 +71,7 @@
   <h2>4. Zoneless: the end state</h2>
   <p>Replace <code>provideZoneChangeDetection()</code> with <code>provideZonelessChangeDetection()</code> in <code>app.config.ts</code> and remove <code>zone.js</code> from the polyfills. Then the list above is the <em>only</em> way anything updates: no more "check everything after every event", no <code>runOutsideAngular</code> needed, about 11 kB less JavaScript.</p>
   <ul>
-    <li>It's stable in v20 and the default from v21. WEF's current nav still loads zone.js, so this is a real decision for their rebuild.</li>
+    <li>It's stable in v20 and the default from v21. Many existing apps still load zone.js, so moving off it is a real decision in a rebuild.</li>
     <li>What breaks: plain fields changed from timers, fetch callbacks or third-party callbacks (the middle card's bug, everywhere). Signals + OnPush everywhere first, zoneless after. This site isn't switched yet, since lessons 01–02 deliberately use plain fields.</li>
     <li>Also good to know: <code>ExpressionChangedAfterItHasBeenCheckedError</code> (NG0100) is dev mode's verification pass catching a binding that changed <em>during</em> a check, usually state set in <code>ngAfterViewInit</code>. Fix the data flow rather than silencing it.</li>
   </ul>

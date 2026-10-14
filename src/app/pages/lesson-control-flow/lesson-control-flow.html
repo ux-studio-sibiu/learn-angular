@@ -83,5 +83,5 @@
   <p class="note">With <code>track t.id</code> the like counts move with their talk: Angular moves the existing DOM rows. With <code>track $index</code> the rows stay put and only the text changes, so the likes now sit on the wrong talk. It's the same bug as <code>key=&#123;index&#125;</code> in React, and it's the reason <code>track</code> exists. Index is fine for static lists that never reorder.</p>
 
   <h2>You'll still see the old syntax</h2>
-  <p>Before Angular 17 these were structural directives: <code>*ngIf="user as u; else none"</code>, <code>*ngFor="let t of talks; trackBy: byId"</code>, <code>[ngSwitch]</code>. Existing codebases (probably WEF's too) are full of them. They work the same way, but need <code>imports: [NgIf, NgFor]</code>, and <code>trackBy</code> was optional, which is why so many lists re-rendered more than needed.</p>
+  <p>Before Angular 17 these were structural directives: <code>*ngIf="user as u; else none"</code>, <code>*ngFor="let t of talks; trackBy: byId"</code>, <code>[ngSwitch]</code>. Existing codebases are full of them. They work the same way, but need <code>imports: [NgIf, NgFor]</code>, and <code>trackBy</code> was optional, which is why so many lists re-rendered more than needed.</p>
 </article>

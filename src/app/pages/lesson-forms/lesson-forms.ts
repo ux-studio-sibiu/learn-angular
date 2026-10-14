@@ -6,7 +6,7 @@ import { map, timer } from 'rxjs';
 import { HasUnsavedChanges } from '../../services/unsaved-changes-guard';
 
 // Validators are plain functions: return null when valid, or an error object (≈ a DataAnnotation attribute / a zod refinement)
-const ticketCode: ValidatorFn = c => (!c.value || /^WEF-\d{4}$/.test(c.value) ? null : { ticketCode: true });
+const ticketCode: ValidatorFn = c => (!c.value || /^TKT-\d{4}$/.test(c.value) ? null : { ticketCode: true });
 
 // Cross-field rule lives on the group, because it needs two controls (≈ IValidatableObject in .NET, zod .refine on the object)
 const guestNameIfBringing: ValidatorFn = g => (g.get('bringGuest')?.value && !g.get('guestName')?.value.trim() ? { guestName: true } : null);
