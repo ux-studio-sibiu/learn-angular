@@ -4,7 +4,9 @@
 .site-header {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 16px 24px; border-bottom: 1px solid var(--line);
-  view-transition-name: site-header; // lesson 13: excluded from the page slide during route transitions
+  // Stays at the top while the page scrolls under it. Opaque, so the content doesn't show through.
+  position: sticky; top: 0; z-index: 10; background: var(--bg);
+  view-transition-name: site-header; // lesson 13: excluded from the page cross-fade during route transitions
 
   .brand { font-weight: 700; color: var(--fg); text-decoration: none; }
 }
